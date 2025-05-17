@@ -1,5 +1,5 @@
 
-import { Booking, Notification, ServicePricing, Worker, Stats } from "@/types";
+import { Booking, Notification, ServicePricing, Worker, Stats, ServiceType } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
 // Mock database storage
@@ -182,8 +182,8 @@ const getStats = (): Stats => {
   const pendingWorkers = workers.filter(worker => worker.status === "Pending").length;
   const completedBookings = bookings.filter(booking => booking.status === "Completed").length;
   
-  // Calculate workers by category
-  const workersByCategory = [
+  // Calculate workers by category - fixing the type here
+  const workersByCategory: { category: ServiceType; count: number; percentage: number }[] = [
     { category: "Cleaning", count: 42, percentage: 42 },
     { category: "Cooking", count: 38, percentage: 38 },
     { category: "Sweeping", count: 27, percentage: 27 },
