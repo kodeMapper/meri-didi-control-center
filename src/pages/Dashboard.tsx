@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WorkerService, BookingService, StatsService, NotificationService } from "@/services/mockDatabase";
 import { Users, Calendar, Clock, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -9,29 +9,98 @@ import { RecentBookingsTable } from "@/components/dashboard/RecentBookingsTable"
 import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { supabase, checkSupabaseConnection } from "@/lib/supabase";
 
 function Dashboard() {
-  const [stats] = useState(StatsService.getStats());
-  const recentBookings = BookingService.getRecent();
-  const pendingWorkers = WorkerService.getPending();
+  const [stats, setStats] = useState(StatsService.getStats());
+  const [recentBookings, setRecentBookings] = useState(BookingService.getRecent());
+  const [pendingWorkers, setPendingWorkers] = useState(WorkerService.getPending());
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleApproveWorker = (workerId: string) => {
+  useEffect(() => {
+    // Load data from Supabase when connected
+    const loadFromSupabase = async () => {
+      if (checkSupabaseConnection()) {
+        try {
+          // Load pending workers
+          const { data: pendingData } = await supabase
+            .from('workers')
+            .select('*')
+            .eq('status', 'Pending')
+            .order('createdAt', { ascending: false })
+            .limit(5);
+            
+          if (pendingData) {
+            setPendingWorkers(pendingData);
+          }
+          
+          // Load recent bookings
+          const { data: bookingsData } = await supabase
+            .from('bookings')
+            .select('*')
+            .order('createdAt', { ascending: false })
+            .limit(5);
+            
+          if (bookingsData) {
+            setRecentBookings(bookingsData);
+          }
+        } catch (error) {
+          console.error("Error loading from Supabase:", error);
+        }
+      }
+    };
+    
+    loadFromSupabase();
+  }, []);
+
+  const handleApproveWorker = async (workerId: string) => {
     WorkerService.update(workerId, { status: "Active" });
+    
+    // Update Supabase if connected
+    if (checkSupabaseConnection()) {
+      try {
+        await supabase
+          .from('workers')
+          .update({ status: 'Active', updatedAt: new Date().toISOString() })
+          .eq('id', workerId);
+      } catch (error) {
+        console.error("Error updating Supabase:", error);
+      }
+    }
+    
     toast({
       title: "Worker Approved",
       description: "Worker has been approved successfully.",
     });
+    
+    // Refresh pending workers list
+    setPendingWorkers(WorkerService.getPending());
   };
 
-  const handleRejectWorker = (workerId: string) => {
+  const handleRejectWorker = async (workerId: string) => {
     WorkerService.update(workerId, { status: "Rejected" });
+    
+    // Update Supabase if connected
+    if (checkSupabaseConnection()) {
+      try {
+        await supabase
+          .from('workers')
+          .update({ status: 'Rejected', updatedAt: new Date().toISOString() })
+          .eq('id', workerId);
+      } catch (error) {
+        console.error("Error updating Supabase:", error);
+      }
+    }
+    
     toast({
       title: "Worker Rejected",
       description: "Worker has been rejected.",
       variant: "destructive",
     });
+    
+    // Refresh pending workers list
+    setPendingWorkers(WorkerService.getPending());
   };
 
   return (

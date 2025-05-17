@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Worker, ServiceType } from "@/types";
 import { WorkerService } from "@/services/mockDatabase";
 import { Button } from "@/components/ui/button";
@@ -27,44 +27,158 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Edit, CheckCircle, Trash, User } from "lucide-react";
+import { Eye, Edit, CheckCircle, Trash, User, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
+import { WorkerProfile } from "@/components/worker/WorkerProfile";
+import { supabase, checkSupabaseConnection } from "@/lib/supabase";
 
 function WorkerManagement() {
-  const [activeWorkers] = useState<Worker[]>(WorkerService.getActive());
-  const [pendingWorkers] = useState<Worker[]>(WorkerService.getPending());
+  const [activeWorkers, setActiveWorkers] = useState<Worker[]>([]);
+  const [pendingWorkers, setPendingWorkers] = useState<Worker[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Load workers from database
+    loadWorkers();
+  }, []);
+  
+  const loadWorkers = async () => {
+    // Try to load from Supabase first if connected
+    if (checkSupabaseConnection()) {
+      try {
+        const { data: activeData, error: activeError } = await supabase
+          .from('workers')
+          .select('*')
+          .eq('status', 'Active');
+          
+        const { data: pendingData, error: pendingError } = await supabase
+          .from('workers')
+          .select('*')
+          .eq('status', 'Pending');
+          
+        if (!activeError && !pendingError) {
+          setActiveWorkers(activeData || []);
+          setPendingWorkers(pendingData || []);
+          return;
+        }
+      } catch (error) {
+        console.error("Error loading from Supabase:", error);
+      }
+    }
+    
+    // Fallback to mock database
+    setActiveWorkers(WorkerService.getActive());
+    setPendingWorkers(WorkerService.getPending());
+  };
 
   const filteredActiveWorkers = selectedCategory === "All Categories" 
     ? activeWorkers 
     : activeWorkers.filter(worker => worker.serviceType === selectedCategory);
 
-  const handleActivateWorker = (id: string) => {
+  const handleViewWorker = (id: string) => {
+    navigate(`/worker-profile/${id}`);
+  };
+
+  const handleActivateWorker = async (id: string) => {
     WorkerService.update(id, { status: "Active" });
+    
+    // Update Supabase if connected
+    if (checkSupabaseConnection()) {
+      try {
+        await supabase
+          .from('workers')
+          .update({ status: 'Active', updatedAt: new Date().toISOString() })
+          .eq('id', id);
+      } catch (error) {
+        console.error("Error updating Supabase:", error);
+      }
+    }
+    
     toast({
       title: "Worker Activated",
       description: "Worker has been activated successfully.",
     });
+    
+    // Refresh worker lists
+    await loadWorkers();
   };
 
-  const handleApproveWorker = (workerId: string) => {
+  const handleDeactivateWorker = async (id: string) => {
+    WorkerService.update(id, { status: "Inactive" });
+    
+    // Update Supabase if connected
+    if (checkSupabaseConnection()) {
+      try {
+        await supabase
+          .from('workers')
+          .update({ status: 'Inactive', updatedAt: new Date().toISOString() })
+          .eq('id', id);
+      } catch (error) {
+        console.error("Error updating Supabase:", error);
+      }
+    }
+    
+    toast({
+      title: "Worker Deactivated",
+      description: "Worker has been deactivated.",
+    });
+    
+    // Refresh worker lists
+    await loadWorkers();
+  };
+
+  const handleApproveWorker = async (workerId: string) => {
     WorkerService.update(workerId, { status: "Active" });
+    
+    // Update Supabase if connected
+    if (checkSupabaseConnection()) {
+      try {
+        await supabase
+          .from('workers')
+          .update({ status: 'Active', updatedAt: new Date().toISOString() })
+          .eq('id', workerId);
+      } catch (error) {
+        console.error("Error updating Supabase:", error);
+      }
+    }
+    
     toast({
       title: "Worker Approved",
       description: "Worker has been approved successfully.",
     });
+    
+    // Refresh worker lists
+    await loadWorkers();
   };
 
-  const handleRejectWorker = (workerId: string) => {
+  const handleRejectWorker = async (workerId: string) => {
     WorkerService.update(workerId, { status: "Rejected" });
+    
+    // Update Supabase if connected
+    if (checkSupabaseConnection()) {
+      try {
+        await supabase
+          .from('workers')
+          .update({ status: 'Rejected', updatedAt: new Date().toISOString() })
+          .eq('id', workerId);
+      } catch (error) {
+        console.error("Error updating Supabase:", error);
+      }
+    }
+    
     toast({
       title: "Worker Rejected",
       description: "Worker has been rejected.",
       variant: "destructive",
     });
+    
+    // Refresh worker lists
+    await loadWorkers();
   };
 
   const handleVerifyWorker = (id: string) => {
@@ -75,13 +189,34 @@ function WorkerManagement() {
     });
   };
 
-  const handleDeleteWorker = (id: string) => {
+  const handleDeleteWorker = async (id: string) => {
     WorkerService.delete(id);
+    
+    // Update Supabase if connected
+    if (checkSupabaseConnection()) {
+      try {
+        await supabase
+          .from('workers')
+          .delete()
+          .eq('id', id);
+      } catch (error) {
+        console.error("Error deleting from Supabase:", error);
+      }
+    }
+    
     toast({
       title: "Worker Deleted",
       description: "Worker has been deleted successfully.",
       variant: "destructive",
     });
+    
+    // Refresh worker lists
+    await loadWorkers();
+  };
+
+  const handleQuickViewWorker = (id: string) => {
+    setSelectedWorkerId(id);
+    setIsProfileOpen(true);
   };
 
   const getStatusBadgeStyle = (status: string) => {
@@ -160,12 +295,20 @@ function WorkerManagement() {
                       <TableRow key={worker.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-medium">
-                              {worker.fullName
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </div>
+                            {worker.photoUrl ? (
+                              <img 
+                                src={worker.photoUrl} 
+                                alt={worker.fullName}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-medium">
+                                {worker.fullName
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </div>
+                            )}
                             <div>
                               <div className="font-medium">{worker.fullName}</div>
                               <div className="text-sm text-gray-500">{worker.email}</div>
@@ -191,10 +334,10 @@ function WorkerManagement() {
                         <TableCell>
                           <div className="flex items-center">
                             <span className="text-yellow-500 mr-1">★</span>
-                            {worker.rating.toFixed(1)}
+                            {worker.rating?.toFixed(1) || "0.0"}
                           </div>
                         </TableCell>
-                        <TableCell>{worker.totalBookings}</TableCell>
+                        <TableCell>{worker.totalBookings || 0}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -218,15 +361,24 @@ function WorkerManagement() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate(`/worker-profile/${worker.id}`)}>
+                              <DropdownMenuItem className="flex items-center gap-2" onClick={() => handleViewWorker(worker.id)}>
                                 <Eye size={16} /> View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="flex items-center gap-2" onClick={() => handleQuickViewWorker(worker.id)}>
+                                <Eye size={16} /> Quick View
                               </DropdownMenuItem>
                               <DropdownMenuItem className="flex items-center gap-2" onClick={() => navigate(`/edit-worker/${worker.id}`)}>
                                 <Edit size={16} /> Edit Worker
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="flex items-center gap-2" onClick={() => handleActivateWorker(worker.id)}>
-                                <CheckCircle size={16} /> Activate
-                              </DropdownMenuItem>
+                              {worker.status !== "Active" ? (
+                                <DropdownMenuItem className="flex items-center gap-2" onClick={() => handleActivateWorker(worker.id)}>
+                                  <CheckCircle size={16} /> Activate
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem className="flex items-center gap-2" onClick={() => handleDeactivateWorker(worker.id)}>
+                                  <X size={16} /> Deactivate
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem className="flex items-center gap-2" onClick={() => handleVerifyWorker(worker.id)}>
                                 <CheckCircle size={16} /> Verify Worker
                               </DropdownMenuItem>
@@ -267,9 +419,17 @@ function WorkerManagement() {
                   <div key={worker.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex gap-3">
-                        <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-medium">
-                          {worker.fullName.split(" ").map(n => n[0]).join("")}
-                        </div>
+                        {worker.photoUrl ? (
+                          <img 
+                            src={worker.photoUrl} 
+                            alt={worker.fullName}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-medium">
+                            {worker.fullName.split(" ").map(n => n[0]).join("")}
+                          </div>
+                        )}
                         <div>
                           <h4 className="font-medium">{worker.fullName}</h4>
                           <p className="text-sm text-gray-500">{worker.email}</p>
@@ -295,13 +455,13 @@ function WorkerManagement() {
                           className="bg-red-100 text-red-600 border border-red-200 hover:bg-red-200 hover:text-red-700"
                           onClick={() => handleRejectWorker(worker.id)}
                         >
-                          <Trash size={16} className="mr-1" />
+                          <X size={16} className="mr-1" />
                           Reject
                         </Button>
                         <Button
                           size="sm" 
                           variant="outline"
-                          onClick={() => navigate(`/worker-profile/${worker.id}`)}
+                          onClick={() => handleViewWorker(worker.id)}
                         >
                           <Eye size={16} className="mr-1" />
                           View Details
@@ -324,6 +484,13 @@ function WorkerManagement() {
           </div>
         </TabsContent>
       </Tabs>
+      
+      <WorkerProfile
+        workerId={selectedWorkerId}
+        open={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onStatusChange={() => loadWorkers()}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import PricingManagement from "./pages/PricingManagement";
 import NotificationCenter from "./pages/NotificationCenter";
 import Settings from "./pages/Settings";
 import WorkerRegistration from "./pages/WorkerRegistration";
+import WorkerProfilePage from "./pages/WorkerProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/notifications" element={<NotificationCenter />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/worker-registration" element={<WorkerRegistration />} />
+            <Route path="/worker-profile/:id" element={<WorkerProfilePage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,9 +1,11 @@
 
+import { useState } from "react";
 import { Worker } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X } from "lucide-react";
+import { Check, X, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { WorkerProfile } from "@/components/worker/WorkerProfile";
 
 interface PendingWorkersListProps {
   workers: Worker[];
@@ -13,6 +15,13 @@ interface PendingWorkersListProps {
 
 export function PendingWorkersList({ workers, onApprove, onReject }: PendingWorkersListProps) {
   const navigate = useNavigate();
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  const handleViewDetails = (workerId: string) => {
+    setSelectedWorkerId(workerId);
+    setIsProfileOpen(true);
+  };
   
   if (workers.length === 0) {
     return (
@@ -74,6 +83,15 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
                 <Button
                   variant="outline" 
                   size="sm" 
+                  className="bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                  onClick={() => handleViewDetails(worker.id)}
+                >
+                  <Eye size={16} className="mr-1" />
+                  View
+                </Button>
+                <Button
+                  variant="outline" 
+                  size="sm" 
                   className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100 hover:text-green-700"
                   onClick={() => onApprove(worker.id)}
                 >
@@ -94,6 +112,13 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
           </div>
         ))}
       </div>
+      
+      <WorkerProfile
+        workerId={selectedWorkerId}
+        open={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onStatusChange={() => setIsProfileOpen(false)}
+      />
     </div>
   );
 }

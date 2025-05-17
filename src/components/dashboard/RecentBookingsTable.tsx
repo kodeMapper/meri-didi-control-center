@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { 
   Table, 
   TableBody, 
@@ -18,12 +19,21 @@ import {
 import { Booking } from "@/types";
 import { Eye, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BookingDetails } from "./BookingDetails";
 
 interface RecentBookingsTableProps {
   bookings: Booking[];
 }
 
 export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsDetailsOpen(true);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Completed":
@@ -116,7 +126,12 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-gray-500"
+                      onClick={() => handleViewDetails(booking)}
+                    >
                       <Eye size={16} />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
@@ -133,6 +148,12 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
       <div className="text-sm text-gray-500 mt-4 px-3">
         Showing 1 to {bookings.length} of {bookings.length} results
       </div>
+
+      <BookingDetails
+        booking={selectedBooking}
+        open={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+      />
     </div>
   );
 }

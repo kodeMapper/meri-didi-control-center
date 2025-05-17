@@ -24,11 +24,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { WorkerService } from '@/services/mockDatabase';
 import { useNavigate } from 'react-router-dom';
+import { supabase, checkSupabaseConnection } from '@/lib/supabase';
 
 enum RegistrationStep {
   PersonalInfo = 1,
@@ -58,8 +59,8 @@ const professionalDetailsSchema = z.object({
 });
 
 const documentsSchema = z.object({
-  idProof: z.any(),
-  photo: z.any(),
+  idProof: z.any().optional(),
+  photo: z.any().optional(),
 });
 
 type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
@@ -70,6 +71,11 @@ export function WorkerRegistrationForm() {
   const [currentStep, setCurrentStep] = useState<RegistrationStep>(RegistrationStep.PersonalInfo);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfoFormData | null>(null);
   const [professionalDetails, setProfessionalDetails] = useState<ProfessionalDetailsFormData | null>(null);
+  const [idProofFile, setIdProofFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [idProofPreview, setIdProofPreview] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -112,14 +118,91 @@ export function WorkerRegistrationForm() {
     setCurrentStep(RegistrationStep.Documents);
   };
 
-  const handleDocumentsSubmit = (data: DocumentsFormData) => {
+  const handleIdProofChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    if (file) {
+      setIdProofFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setIdProofPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadFileToSupabase = async (file: File, path: string) => {
+    // Skip if not connected to Supabase
+    if (!checkSupabaseConnection()) {
+      console.log('Supabase not connected, skipping file upload');
+      return null;
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${path}/${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('worker-documents')
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Error uploading file:', error);
+        return null;
+      }
+
+      // Generate a public URL for the file
+      const { data: urlData } = await supabase.storage
+        .from('worker-documents')
+        .getPublicUrl(filePath);
+
+      return urlData?.publicUrl || null;
+    } catch (error) {
+      console.error('Error in file upload:', error);
+      return null;
+    }
+  };
+
+  const handleDocumentsSubmit = async (data: DocumentsFormData) => {
     if (!personalInfo || !professionalDetails) {
+      toast({
+        title: "Form Error",
+        description: "Please complete all sections of the form.",
+        variant: "destructive",
+      });
       return;
     }
 
-    // Create the worker with all the collected data
+    setIsSubmitting(true);
+
     try {
-      WorkerService.create({
+      // Upload documents to Supabase if available
+      let idProofUrl = null;
+      let photoUrl = null;
+      
+      if (idProofFile) {
+        idProofUrl = await uploadFileToSupabase(idProofFile, 'id-proofs');
+      }
+      
+      if (photoFile) {
+        photoUrl = await uploadFileToSupabase(photoFile, 'photos');
+      }
+
+      // Create worker entry
+      const worker = WorkerService.create({
         fullName: personalInfo.fullName,
         email: personalInfo.email,
         phone: personalInfo.phone,
@@ -135,7 +218,49 @@ export function WorkerRegistrationForm() {
         about: professionalDetails.about,
         skills: [],
         status: 'Pending',
+        idProofUrl: idProofUrl,
+        photoUrl: photoUrl,
       });
+
+      // Save worker data to Supabase if connected
+      if (checkSupabaseConnection()) {
+        try {
+          const { error } = await supabase
+            .from('workers')
+            .insert([{
+              id: worker.id,
+              fullName: worker.fullName,
+              email: worker.email,
+              phone: worker.phone,
+              address: worker.address,
+              city: worker.city,
+              gender: worker.gender,
+              dateOfBirth: worker.dateOfBirth,
+              serviceType: worker.serviceType,
+              experience: worker.experience,
+              availability: worker.availability,
+              idType: worker.idType,
+              idNumber: worker.idNumber,
+              about: worker.about,
+              skills: worker.skills,
+              status: worker.status,
+              idProofUrl: idProofUrl,
+              photoUrl: photoUrl,
+              rating: worker.rating,
+              totalBookings: worker.totalBookings,
+              completionRate: worker.completionRate,
+              createdAt: worker.createdAt,
+              updatedAt: worker.updatedAt,
+            }]);
+
+          if (error) {
+            console.error('Error saving to Supabase:', error);
+            // Continue anyway since we have local storage
+          }
+        } catch (error) {
+          console.error('Error in Supabase operation:', error);
+        }
+      }
 
       toast({
         title: "Registration Successful",
@@ -148,6 +273,10 @@ export function WorkerRegistrationForm() {
       documentsForm.reset();
       setPersonalInfo(null);
       setProfessionalDetails(null);
+      setIdProofFile(null);
+      setPhotoFile(null);
+      setIdProofPreview(null);
+      setPhotoPreview(null);
       setCurrentStep(RegistrationStep.PersonalInfo);
       
       // Navigate to dashboard or worker management
@@ -158,6 +287,8 @@ export function WorkerRegistrationForm() {
         description: "There was a problem submitting your application.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -513,60 +644,120 @@ export function WorkerRegistrationForm() {
               </p>
 
               <div className="space-y-8">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <div className="mx-auto h-16 w-16 bg-yellow-50 rounded-full flex items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      className="h-8 w-8 text-yellow-600"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center relative">
+                  {idProofPreview ? (
+                    <div className="relative mb-4">
+                      <img 
+                        src={idProofPreview} 
+                        alt="ID Proof Preview" 
+                        className="mx-auto max-h-40 object-contain rounded-md" 
                       />
-                    </svg>
-                  </div>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm" 
+                        className="absolute top-2 right-2 bg-red-100 text-red-600 border-red-200 h-6 w-6 p-1 rounded-full"
+                        onClick={() => {
+                          setIdProofFile(null);
+                          setIdProofPreview(null);
+                        }}
+                      >
+                        <X size={12} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mx-auto h-16 w-16 bg-yellow-50 rounded-full flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-yellow-600" />
+                    </div>
+                  )}
+                  
                   <div className="mt-4">
                     <h3 className="text-sm font-medium">Upload ID Proof</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       (Aadhar Card, PAN Card, etc. as selected above)
                     </p>
                   </div>
-                  <Button className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black">
-                    Select File
-                  </Button>
+                  
+                  <input 
+                    type="file" 
+                    id="idProof"
+                    className="hidden" 
+                    accept="image/*,.pdf" 
+                    onChange={handleIdProofChange}
+                  />
+                  <label htmlFor="idProof">
+                    <Button 
+                      type="button" 
+                      className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black" 
+                      onClick={() => document.getElementById('idProof')?.click()}
+                    >
+                      {idProofFile ? 'Change File' : 'Select File'}
+                    </Button>
+                  </label>
+                  
+                  {idProofFile && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      {idProofFile.name} ({Math.round(idProofFile.size / 1024)} KB)
+                    </p>
+                  )}
                 </div>
 
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <div className="mx-auto h-16 w-16 bg-yellow-50 rounded-full flex items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      className="h-8 w-8 text-yellow-600"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                  {photoPreview ? (
+                    <div className="relative mb-4">
+                      <img 
+                        src={photoPreview} 
+                        alt="Photo Preview" 
+                        className="mx-auto max-h-40 object-contain rounded-md" 
                       />
-                    </svg>
-                  </div>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        size="sm" 
+                        className="absolute top-2 right-2 bg-red-100 text-red-600 border-red-200 h-6 w-6 p-1 rounded-full"
+                        onClick={() => {
+                          setPhotoFile(null);
+                          setPhotoPreview(null);
+                        }}
+                      >
+                        <X size={12} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mx-auto h-16 w-16 bg-yellow-50 rounded-full flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-yellow-600" />
+                    </div>
+                  )}
+                  
                   <div className="mt-4">
                     <h3 className="text-sm font-medium">Upload Recent Photograph</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       (A clear, passport-size photo with white background)
                     </p>
                   </div>
-                  <Button className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black">
-                    Select File
-                  </Button>
+                  
+                  <input 
+                    type="file" 
+                    id="photo"
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handlePhotoChange}
+                  />
+                  <label htmlFor="photo">
+                    <Button 
+                      type="button" 
+                      className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black" 
+                      onClick={() => document.getElementById('photo')?.click()}
+                    >
+                      {photoFile ? 'Change File' : 'Select File'}
+                    </Button>
+                  </label>
+                  
+                  {photoFile && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      {photoFile.name} ({Math.round(photoFile.size / 1024)} KB)
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -578,8 +769,9 @@ export function WorkerRegistrationForm() {
               <Button 
                 type="submit" 
                 className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                disabled={isSubmitting}
               >
-                Submit Application
+                {isSubmitting ? 'Submitting...' : 'Submit Application'}
               </Button>
             </div>
           </form>

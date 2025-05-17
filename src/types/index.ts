@@ -1,46 +1,12 @@
 
-export type ServiceType = 
-  | "Cleaning"
-  | "Cooking"
-  | "Driving"
-  | "Sweeping"
-  | "Landscaping"
-  | "Unknown";
-
-export type IDType = 
-  | "Aadhar Card"
-  | "PAN Card"
-  | "Driving License"
-  | "Voter ID"
-  | "Passport"
-  | "Unknown";
-
-export type Availability = 
-  | "Full-Time"
-  | "Part-Time"
-  | "Weekends Only"
-  | "Weekdays Only"
-  | "Custom"
-  | "Unknown";
-
-export type Gender = "Male" | "Female" | "Other" | "Unknown";
-
-export type City = 
-  | "Mumbai"
-  | "Delhi"
-  | "Bangalore"
-  | "Hyderabad"
-  | "Chennai"
-  | "Kolkata"
-  | "Pune"
-  | "Ahmedabad"
-  | "Unknown";
-
-export type Status = "Pending" | "Approved" | "Rejected" | "Active" | "Inactive";
-
-export type WorkerStatus = "Active" | "Inactive" | "Pending" | "Rejected";
-
+export type ServiceType = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
+export type WorkerStatus = "Pending" | "Active" | "Inactive" | "Rejected";
+export type Gender = "Male" | "Female" | "Other";
+export type City = "Mumbai" | "Delhi" | "Bangalore" | "Hyderabad" | "Chennai" | "Kolkata" | "Pune" | "Ahmedabad";
+export type Availability = "Full-Time" | "Part-Time" | "Weekends Only" | "Weekdays Only" | "Custom";
+export type IDType = "Aadhar Card" | "PAN Card" | "Driving License" | "Voter ID" | "Passport";
 export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
+export type NotificationType = "New Worker Application" | "Worker Verified" | "New Booking" | "Booking Completed" | "Payment Received";
 
 export interface Worker {
   id: string;
@@ -59,12 +25,23 @@ export interface Worker {
   about: string;
   skills: string[];
   status: WorkerStatus;
-  rating: number;
-  totalBookings: number;
-  completionRate: number;
-  joiningDate: string;
-  idProofUrl?: string;
-  photoUrl?: string;
+  rating?: number;
+  totalBookings?: number;
+  completionRate?: number;
+  joiningDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  idProofUrl?: string | null;
+  photoUrl?: string | null;
+}
+
+export interface ServicePricing {
+  id: string;
+  serviceName: string;
+  category: ServiceType;
+  description: string;
+  duration: number;
+  price: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,27 +62,23 @@ export interface Booking {
   serviceTime: string;
   amount: number;
   status: BookingStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ServicePricing {
-  id: string;
-  serviceName: string;
-  category: ServiceType;
-  description: string;
-  duration: number;
-  price: number;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Notification {
   id: string;
-  type: "Worker Verified" | "New Booking" | "Booking Completed" | "New Worker Application" | "Payment Received" | "Other";
+  type: NotificationType;
   message: string;
   read: boolean;
   createdAt: string;
+}
+
+export interface CategoryStat {
+  category: string;
+  count: number;
+  percentage: number;
 }
 
 export interface Stats {
@@ -113,11 +86,7 @@ export interface Stats {
   activeWorkers: number;
   pendingApprovals: number;
   bookingsThisWeek: number;
-  workersByCategory: {
-    category: ServiceType;
-    count: number;
-    percentage: number;
-  }[];
+  workersByCategory: CategoryStat[];
   growthRates: {
     workers: number;
     activeWorkers: number;
