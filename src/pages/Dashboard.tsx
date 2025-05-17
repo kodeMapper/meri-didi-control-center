@@ -10,6 +10,7 @@ import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase, checkSupabaseConnection } from "@/lib/supabase";
+import { CategoryStat } from "@/types";
 
 function Dashboard() {
   const [stats, setStats] = useState(StatsService.getStats());
@@ -160,7 +161,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-1">
-          <WorkerCategoryChart data={stats.workersByCategory} />
+          <WorkerCategoryChart data={stats.workersByCategory as any} />
         </div>
         <div className="xl:col-span-2">
           <PendingWorkersList
