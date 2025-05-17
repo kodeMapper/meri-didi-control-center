@@ -7,12 +7,15 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { WorkerCategoryChart } from "@/components/dashboard/WorkerCategoryChart";
 import { RecentBookingsTable } from "@/components/dashboard/RecentBookingsTable";
 import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 function Dashboard() {
   const [stats] = useState(StatsService.getStats());
   const recentBookings = BookingService.getRecent();
   const pendingWorkers = WorkerService.getPending();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleApproveWorker = (workerId: string) => {
     WorkerService.update(workerId, { status: "Active" });
@@ -33,7 +36,12 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <Button onClick={() => navigate("/worker-registration")} className="bg-yellow-500 hover:bg-yellow-600 text-black">
+          + Add New Worker
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard

@@ -62,7 +62,7 @@ servicePricing = [
   }
 ];
 
-// Add a few sample workers for the demo
+// Add more sample workers for the demo
 workers = [
   {
     id: uuidv4(),
@@ -111,6 +111,54 @@ workers = [
     joiningDate: "2025-05-15",
     createdAt: "2025-05-10T09:15:00Z",
     updatedAt: "2025-05-10T09:15:00Z",
+  },
+  {
+    id: uuidv4(),
+    fullName: "Priya Sharma",
+    email: "priya.s@example.com",
+    phone: "+1234567892",
+    address: "72 Park Avenue",
+    city: "Bangalore",
+    gender: "Female",
+    dateOfBirth: "1988-08-12",
+    serviceType: "Cooking",
+    experience: 7,
+    availability: "Full-Time",
+    idType: "Aadhar Card",
+    idNumber: "9876-5432-1098",
+    about: "Experienced chef specializing in North Indian cuisine",
+    skills: ["North Indian cooking", "South Indian cooking", "Baking"],
+    status: "Active",
+    rating: 4.8,
+    totalBookings: 15,
+    completionRate: 98,
+    joiningDate: "2024-01-15",
+    createdAt: "2024-01-10T08:20:00Z",
+    updatedAt: "2024-01-15T10:30:00Z",
+  },
+  {
+    id: uuidv4(),
+    fullName: "Rahul Patel",
+    email: "rahul.p@example.com",
+    phone: "+1234567893",
+    address: "45 Lake View",
+    city: "Hyderabad",
+    gender: "Male",
+    dateOfBirth: "1995-03-25",
+    serviceType: "Driving",
+    experience: 4,
+    availability: "Weekends Only",
+    idType: "Driving License",
+    idNumber: "DL98765432",
+    about: "Professional driver with experience in both commercial and private transportation",
+    skills: ["City driving", "Highway driving", "Defensive driving"],
+    status: "Pending",
+    rating: 0,
+    totalBookings: 0,
+    completionRate: 0,
+    joiningDate: "2025-05-16",
+    createdAt: "2025-05-14T14:45:00Z",
+    updatedAt: "2025-05-14T14:45:00Z",
   }
 ];
 
@@ -134,6 +182,44 @@ bookings = [
     status: "Completed",
     createdAt: "2025-05-07T14:30:00Z",
     updatedAt: "2025-05-08T12:47:00Z",
+  },
+  {
+    id: uuidv4(),
+    customerId: uuidv4(),
+    customerName: "Bob Johnson",
+    customerEmail: "bob.j@example.com",
+    customerPhone: "+1987654322",
+    customerAddress: "456 Second Ave, City",
+    workerId: workers[2].id,
+    workerName: workers[2].fullName,
+    serviceType: "Cooking",
+    serviceName: "Basic Cooking",
+    serviceDuration: 2,
+    serviceDate: "2025-05-16",
+    serviceTime: "05:13",
+    amount: 50.00,
+    status: "Completed",
+    createdAt: "2025-05-15T10:30:00Z",
+    updatedAt: "2025-05-16T07:15:00Z",
+  },
+  {
+    id: uuidv4(),
+    customerId: uuidv4(),
+    customerName: "Daniel Brown",
+    customerEmail: "daniel.b@example.com",
+    customerPhone: "+1987654323",
+    customerAddress: "789 Third Ave, City",
+    workerId: workers[0].id,
+    workerName: workers[0].fullName,
+    serviceType: "Cleaning",
+    serviceName: "Garden Maintenance",
+    serviceDuration: 3,
+    serviceDate: "2025-05-18",
+    serviceTime: "05:13",
+    amount: 80.00,
+    status: "Confirmed",
+    createdAt: "2025-05-17T09:20:00Z",
+    updatedAt: "2025-05-17T10:15:00Z",
   }
 ];
 
@@ -209,6 +295,8 @@ export const WorkerService = {
   getAll: () => [...workers],
   getById: (id: string) => workers.find(worker => worker.id === id) || null,
   getPending: () => workers.filter(worker => worker.status === "Pending"),
+  getActive: () => workers.filter(worker => worker.status === "Active"),
+  getByServiceType: (serviceType: ServiceType) => workers.filter(worker => worker.serviceType === serviceType),
   create: (worker: Omit<Worker, "id" | "createdAt" | "updatedAt" | "rating" | "totalBookings" | "completionRate" | "joiningDate">) => {
     const newWorker: Worker = {
       id: uuidv4(),

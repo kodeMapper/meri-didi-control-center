@@ -3,6 +3,7 @@ import { Worker } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface PendingWorkersListProps {
   workers: Worker[];
@@ -11,12 +12,19 @@ interface PendingWorkersListProps {
 }
 
 export function PendingWorkersList({ workers, onApprove, onReject }: PendingWorkersListProps) {
+  const navigate = useNavigate();
+  
   if (workers.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-medium">Recent Worker Applications</h3>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-yellow-600 border-yellow-200 hover:bg-yellow-50"
+            onClick={() => navigate('/worker-management')}
+          >
             View All
           </Button>
         </div>
@@ -31,7 +39,12 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-medium">Recent Worker Applications</h3>
-        <Button variant="outline" size="sm" className="text-primary">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="text-yellow-600 border-yellow-200 hover:bg-yellow-50"
+          onClick={() => navigate('/worker-management')}
+        >
           View All
         </Button>
       </div>
@@ -41,14 +54,14 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
           <div key={worker.id} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
+                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-semibold">
                   {worker.fullName.split(" ").map(n => n[0]).join("")}
                 </div>
                 <div>
                   <h4 className="font-medium">{worker.fullName}</h4>
                   <p className="text-sm text-gray-500">{worker.email}</p>
                   <div className="flex gap-2 mt-1">
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
                       {worker.serviceType}
                     </Badge>
                     <Badge variant="outline" className="bg-gray-100 text-gray-800">

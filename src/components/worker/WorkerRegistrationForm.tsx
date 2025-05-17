@@ -28,6 +28,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { WorkerService } from '@/services/mockDatabase';
+import { useNavigate } from 'react-router-dom';
 
 enum RegistrationStep {
   PersonalInfo = 1,
@@ -70,6 +71,7 @@ export function WorkerRegistrationForm() {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfoFormData | null>(null);
   const [professionalDetails, setProfessionalDetails] = useState<ProfessionalDetailsFormData | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const personalInfoForm = useForm<PersonalInfoFormData>({
     resolver: zodResolver(personalInfoSchema),
@@ -147,6 +149,9 @@ export function WorkerRegistrationForm() {
       setPersonalInfo(null);
       setProfessionalDetails(null);
       setCurrentStep(RegistrationStep.PersonalInfo);
+      
+      // Navigate to dashboard or worker management
+      navigate("/worker-management");
     } catch (error) {
       toast({
         title: "Registration Failed",
@@ -172,7 +177,7 @@ export function WorkerRegistrationForm() {
       {/* Progress bar */}
       <div className="w-full bg-gray-200 h-2 rounded-full mb-8">
         <div 
-          className="bg-primary h-2 rounded-full transition-all"
+          className="bg-yellow-500 h-2 rounded-full transition-all"
           style={{ 
             width: `${(currentStep / Object.keys(RegistrationStep).length * 2) * 100}%`,
           }}
@@ -181,13 +186,13 @@ export function WorkerRegistrationForm() {
 
       {/* Step indicators */}
       <div className="flex justify-between mb-8">
-        <div className={`flex flex-col items-center ${currentStep === RegistrationStep.PersonalInfo ? 'text-primary font-medium' : 'text-gray-500'}`}>
+        <div className={`flex flex-col items-center ${currentStep === RegistrationStep.PersonalInfo ? 'text-yellow-500 font-medium' : 'text-gray-500'}`}>
           Personal Info
         </div>
-        <div className={`flex flex-col items-center ${currentStep === RegistrationStep.ProfessionalDetails ? 'text-primary font-medium' : 'text-gray-500'}`}>
+        <div className={`flex flex-col items-center ${currentStep === RegistrationStep.ProfessionalDetails ? 'text-yellow-500 font-medium' : 'text-gray-500'}`}>
           Professional Details
         </div>
-        <div className={`flex flex-col items-center ${currentStep === RegistrationStep.Documents ? 'text-primary font-medium' : 'text-gray-500'}`}>
+        <div className={`flex flex-col items-center ${currentStep === RegistrationStep.Documents ? 'text-yellow-500 font-medium' : 'text-gray-500'}`}>
           Documents
         </div>
       </div>
@@ -350,7 +355,7 @@ export function WorkerRegistrationForm() {
             />
 
             <div className="flex justify-end">
-              <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-black">
                 Next
               </Button>
             </div>
@@ -490,7 +495,7 @@ export function WorkerRegistrationForm() {
               <Button type="button" variant="outline" onClick={goBack}>
                 Previous
               </Button>
-              <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-black">
                 Next
               </Button>
             </div>
@@ -515,7 +520,7 @@ export function WorkerRegistrationForm() {
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      className="h-8 w-8 text-primary"
+                      className="h-8 w-8 text-yellow-600"
                     >
                       <path
                         strokeLinecap="round"
@@ -531,7 +536,7 @@ export function WorkerRegistrationForm() {
                       (Aadhar Card, PAN Card, etc. as selected above)
                     </p>
                   </div>
-                  <Button className="mt-4" variant="outline">
+                  <Button className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black">
                     Select File
                   </Button>
                 </div>
@@ -543,7 +548,7 @@ export function WorkerRegistrationForm() {
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
-                      className="h-8 w-8 text-primary"
+                      className="h-8 w-8 text-yellow-600"
                     >
                       <path
                         strokeLinecap="round"
@@ -559,7 +564,7 @@ export function WorkerRegistrationForm() {
                       (A clear, passport-size photo with white background)
                     </p>
                   </div>
-                  <Button className="mt-4" variant="outline">
+                  <Button className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black">
                     Select File
                   </Button>
                 </div>
@@ -572,7 +577,7 @@ export function WorkerRegistrationForm() {
               </Button>
               <Button 
                 type="submit" 
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-yellow-500 hover:bg-yellow-600 text-black"
               >
                 Submit Application
               </Button>
