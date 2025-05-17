@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { WorkerService } from '@/services/mockDatabase';
 import { useNavigate } from 'react-router-dom';
-import { supabase, checkSupabaseConnection } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 enum RegistrationStep {
   PersonalInfo = 1,
@@ -142,12 +142,6 @@ export function WorkerRegistrationForm() {
   };
 
   const uploadFileToSupabase = async (file: File, path: string) => {
-    // Skip if not connected to Supabase
-    if (!checkSupabaseConnection()) {
-      console.log('Supabase not connected, skipping file upload');
-      return null;
-    }
-
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
@@ -188,7 +182,7 @@ export function WorkerRegistrationForm() {
     setIsSubmitting(true);
 
     try {
-      // Upload documents to Supabase if available
+      // Upload documents to Supabase
       let idProofUrl = null;
       let photoUrl = null;
       
@@ -200,7 +194,7 @@ export function WorkerRegistrationForm() {
         photoUrl = await uploadFileToSupabase(photoFile, 'photos');
       }
 
-      // Create worker entry
+      // Save to local mock database
       const worker = WorkerService.create({
         fullName: personalInfo.fullName,
         email: personalInfo.email,
@@ -221,50 +215,43 @@ export function WorkerRegistrationForm() {
         photoUrl: photoUrl,
       });
 
-      // Save worker data to Supabase if connected
-      if (checkSupabaseConnection()) {
-        try {
-          const { error } = await supabase
-            .from('workers')
-            .insert([{
-              id: worker.id,
-              fullName: worker.fullName,
-              email: worker.email,
-              phone: worker.phone,
-              address: worker.address,
-              city: worker.city,
-              gender: worker.gender,
-              dateOfBirth: worker.dateOfBirth,
-              serviceType: worker.serviceType,
-              experience: worker.experience,
-              availability: worker.availability,
-              idType: worker.idType,
-              idNumber: worker.idNumber,
-              about: worker.about,
-              skills: worker.skills,
-              status: worker.status,
-              idProofUrl: idProofUrl,
-              photoUrl: photoUrl,
-              rating: worker.rating,
-              totalBookings: worker.totalBookings,
-              completionRate: worker.completionRate,
-              createdAt: worker.createdAt,
-              updatedAt: worker.updatedAt,
-            }]);
+      // Save worker data to Supabase
+      const { error } = await supabase
+        .from('worker_applications')
+        .insert([{
+          full_name: personalInfo.fullName,
+          email: personalInfo.email,
+          phone: personalInfo.phone,
+          address: personalInfo.address,
+          city: personalInfo.city,
+          gender: personalInfo.gender,
+          date_of_birth: format(personalInfo.dateOfBirth, 'yyyy-MM-dd'),
+          service_type: professionalDetails.serviceType,
+          experience: parseInt(professionalDetails.experience),
+          availability: professionalDetails.availability,
+          id_type: professionalDetails.idType,
+          id_number: professionalDetails.idNumber,
+          about: professionalDetails.about,
+          id_proof_url: idProofUrl,
+          photo_url: photoUrl,
+          status: 'Pending',
+          skills: [],
+        }]);
 
-          if (error) {
-            console.error('Error saving to Supabase:', error);
-            // Continue anyway since we have local storage
-          }
-        } catch (error) {
-          console.error('Error in Supabase operation:', error);
-        }
+      if (error) {
+        console.error('Error saving to Supabase:', error);
+        toast({
+          title: "Database Error",
+          description: `Error saving to database: ${error.message}`,
+          variant: "destructive",
+        });
+        // Continue anyway since we have local storage
+      } else {
+        toast({
+          title: "Registration Successful",
+          description: "Your application has been submitted and saved to the database.",
+        });
       }
-
-      toast({
-        title: "Registration Successful",
-        description: "Your application has been submitted successfully.",
-      });
 
       // Reset forms and go back to first step
       personalInfoForm.reset();
@@ -281,6 +268,7 @@ export function WorkerRegistrationForm() {
       // Navigate to dashboard or worker management
       navigate("/worker-management");
     } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration Failed",
         description: "There was a problem submitting your application.",
