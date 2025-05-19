@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Worker } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye } from "lucide-react";
+import { Check, X, User, Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { WorkerProfile } from "@/components/worker/WorkerProfile";
 
@@ -17,6 +17,8 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
   const navigate = useNavigate();
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [workerToCopy, setWorkerToCopy] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
   
   const handleViewDetails = (workerId: string) => {
     setSelectedWorkerId(workerId);
@@ -30,6 +32,18 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
       .map(n => n[0] || "")
       .join("")
       .toUpperCase();
+  };
+  
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setWorkerToCopy(id);
+    setIsCopied(true);
+    
+    // Reset copied state after 2 seconds
+    setTimeout(() => {
+      setIsCopied(false);
+      setWorkerToCopy(null);
+    }, 2000);
   };
   
   if (workers.length === 0) {
@@ -84,7 +98,20 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
                   </div>
                 )}
                 <div>
-                  <h4 className="font-medium">{worker.fullName || "Unknown"}</h4>
+                  <h4 className="font-medium">
+                    {worker.fullName || "Unknown"}
+                    <span 
+                      className="ml-2 text-xs text-gray-500 cursor-pointer hover:underline"
+                      onClick={() => copyToClipboard(worker.id)}
+                    >
+                      #{worker.id.substring(0, 8)}...
+                      {workerToCopy === worker.id && isCopied && (
+                        <span className="ml-1 text-green-500">
+                          <Check size={12} className="inline" />
+                        </span>
+                      )}
+                    </span>
+                  </h4>
                   <p className="text-sm text-gray-500">{worker.email || "No email"}</p>
                   <div className="flex gap-2 mt-1">
                     <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
@@ -103,8 +130,8 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
                   className="bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                   onClick={() => handleViewDetails(worker.id)}
                 >
-                  <Eye size={16} className="mr-1" />
-                  View
+                  <User size={16} className="mr-1" />
+                  View Details
                 </Button>
                 <Button
                   variant="outline" 

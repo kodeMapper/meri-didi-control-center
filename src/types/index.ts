@@ -1,3 +1,4 @@
+
 export type ServiceType = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
 export type WorkerStatus = "Pending" | "Active" | "Inactive" | "Rejected";
 export type Gender = "Male" | "Female" | "Other";
@@ -5,7 +6,8 @@ export type City = "Mumbai" | "Delhi" | "Bangalore" | "Hyderabad" | "Chennai" | 
 export type Availability = "Full-Time" | "Part-Time" | "Weekends Only" | "Weekdays Only" | "Custom";
 export type IDType = "Aadhar Card" | "PAN Card" | "Driving License" | "Voter ID" | "Passport";
 export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
-export type NotificationType = "New Worker Application" | "Worker Verified" | "New Booking" | "Booking Completed" | "Payment Received" | "Booking Cancelled";
+export type NotificationType = "New Worker Application" | "Worker Verified" | "New Booking" | "Booking Completed" | "Payment Received" | "Booking Cancelled" | "General Announcement" | "Special Offer";
+export type UserType = "admin" | "worker" | "customer";
 
 export interface Worker {
   id: string;
@@ -66,16 +68,19 @@ export interface Booking {
   rating?: number;
   createdAt: string;
   updatedAt: string;
+  deletionReason?: string;
 }
 
 export interface Notification {
   id: string;
   type: NotificationType;
   message: string;
+  title?: string;
   read: boolean;
   createdAt: string;
-  user_type?: 'admin' | 'worker' | 'customer';
+  user_type?: UserType;
   user_identifier?: string;
+  recipients?: string; // 'all', 'workers', 'customers', or specific IDs
 }
 
 export interface CategoryStat {

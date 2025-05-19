@@ -17,10 +17,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Booking } from "@/types";
-import { Eye, Edit } from "lucide-react";
+import { Eye, Trash2, Copy, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BookingDetails } from "./BookingDetails";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { deleteBooking, addNotification } from "@/lib/supabase";
 
 interface RecentBookingsTableProps {
   bookings: Booking[];
@@ -29,7 +40,12 @@ interface RecentBookingsTableProps {
 export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [bookingToCopy, setBookingToCopy] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -38,6 +54,72 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
   
   const handleViewAll = () => {
     navigate('/bookings');
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!selectedBooking) return;
+    
+    try {
+      // Delete booking from database
+      const success = await deleteBooking(selectedBooking.id);
+      
+      if (success) {
+        // Send notification to worker
+        if (selectedBooking.workerId) {
+          await addNotification({
+            type: "Booking Cancelled",
+            message: `Booking #${selectedBooking.id.substring(0, 8)} has been cancelled. Reason: ${deletionReason}`,
+            title: "Booking Cancelled",
+            read: false,
+            user_type: "worker",
+            user_identifier: selectedBooking.workerId
+          });
+        }
+        
+        // Send notification to customer
+        await addNotification({
+          type: "Booking Cancelled",
+          message: `Your booking for ${selectedBooking.serviceName} on ${selectedBooking.serviceDate} has been cancelled. Reason: ${deletionReason}`,
+          title: "Booking Cancelled",
+          read: false,
+          user_type: "customer",
+          user_identifier: selectedBooking.customerId
+        });
+        
+        toast({
+          title: "Booking Deleted",
+          description: `Booking has been cancelled and notifications sent.`,
+        });
+        
+        // Close dialog and reset
+        setIsDeleteDialogOpen(false);
+        setDeletionReason("");
+      }
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete booking",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleShowDeleteDialog = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setBookingToCopy(id);
+    setIsCopied(true);
+    
+    // Reset copied state after 2 seconds
+    setTimeout(() => {
+      setIsCopied(false);
+      setBookingToCopy(null);
+    }, 2000);
   };
 
   const getStatusColor = (status: string) => {
@@ -91,6 +173,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>BOOKING ID</TableHead>
               <TableHead>CUSTOMER</TableHead>
               <TableHead>WORKER</TableHead>
               <TableHead>SERVICE</TableHead>
@@ -104,6 +187,27 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
             {bookings.length > 0 ? bookings.map((booking) => (
               <TableRow key={booking.id}>
                 <TableCell className="font-medium">
+                  <div 
+                    className="relative group cursor-pointer" 
+                    onClick={() => copyToClipboard(booking.id)}
+                  >
+                    <span className="text-xs text-gray-600">
+                      #{booking.id.substring(0, 8)}...
+                    </span>
+                    <div className="absolute hidden group-hover:flex items-center gap-1 bg-black bg-opacity-70 text-white text-xs py-1 px-2 rounded -top-8 left-0 whitespace-nowrap">
+                      {bookingToCopy === booking.id && isCopied ? (
+                        <>
+                          <Check size={12} /> Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={12} /> Copy ID
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell>
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-medium">
                       {getInitials(booking.customerName)}
@@ -144,18 +248,25 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                       size="icon" 
                       className="h-8 w-8 text-gray-500"
                       onClick={() => handleViewDetails(booking)}
+                      title="View Details"
                     >
                       <Eye size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
-                      <Edit size={16} />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-gray-500"
+                      onClick={() => handleShowDeleteDialog(booking)}
+                      title="Delete Booking"
+                    >
+                      <Trash2 size={16} />
                     </Button>
                   </div>
                 </TableCell>
               </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-6 text-gray-500">
                   No bookings found
                 </TableCell>
               </TableRow>
@@ -173,6 +284,41 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
       />
+      
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Booking</DialogTitle>
+            <DialogDescription>
+              You are about to delete booking #{selectedBooking?.id.substring(0, 8)}. This action cannot be undone.
+              Please provide a reason for cancellation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Textarea
+                id="deletion-reason"
+                placeholder="Enter reason for cancellation"
+                value={deletionReason}
+                onChange={(e) => setDeletionReason(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteBooking}
+              disabled={!deletionReason.trim()}
+            >
+              Delete Booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,7 +1,14 @@
 
 // Import the properly configured supabase client
 import { supabase as configuredSupabase } from '@/integrations/supabase/client';
-import { Booking, BookingStatus, ServiceType, Notification, NotificationType } from '@/types';
+import { 
+  Booking, 
+  BookingStatus, 
+  ServiceType, 
+  Notification, 
+  NotificationType,
+  UserType
+} from '@/types';
 
 // Export the configured client
 export const supabase = configuredSupabase;
@@ -98,7 +105,8 @@ export async function getRecentBookings(limit = 5) {
       feedback: booking.feedback || "", // Using the new field
       rating: booking.rating || 0, // Using the new field
       createdAt: booking.created_at,
-      updatedAt: booking.updated_at
+      updatedAt: booking.updated_at,
+      deletionReason: booking.deletion_reason
     })) as Booking[];
   } catch (error) {
     console.error("Exception fetching bookings:", error);
@@ -141,7 +149,8 @@ export async function getCompletedBookings() {
       feedback: booking.feedback || "", // Using the new field
       rating: booking.rating || 0, // Using the new field
       createdAt: booking.created_at,
-      updatedAt: booking.updated_at
+      updatedAt: booking.updated_at,
+      deletionReason: booking.deletion_reason
     })) as Booking[];
   } catch (error) {
     console.error("Exception fetching completed bookings:", error);
@@ -150,11 +159,17 @@ export async function getCompletedBookings() {
 }
 
 // Helper to delete a booking
-export async function deleteBooking(bookingId: string) {
+export async function deleteBooking(bookingId: string, reason?: string) {
   try {
+    // In a real implementation, you might want to update the status to 'Cancelled'
+    // instead of deleting the record, and store the reason
     const { error } = await supabase
       .from('bookings')
-      .delete()
+      .update({ 
+        status: 'Cancelled', 
+        deletion_reason: reason || 'No reason provided',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', bookingId);
     
     if (error) {
@@ -256,9 +271,10 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'c
       .insert({
         type: notification.type,
         message: notification.message,
+        title: notification.title || null,
         read: false,
-        user_type: notification.user_type,
-        user_identifier: notification.user_identifier,
+        user_type: notification.user_type || null,
+        user_identifier: notification.user_identifier || null,
         created_at: new Date().toISOString()
       });
     
@@ -291,10 +307,12 @@ export async function getNotifications() {
       id: notification.id,
       type: notification.type as NotificationType,
       message: notification.message,
+      title: notification.title || undefined,
       read: notification.read,
       createdAt: notification.created_at,
-      user_type: notification.user_type,
-      user_identifier: notification.user_identifier
+      user_type: notification.user_type as UserType | undefined,
+      user_identifier: notification.user_identifier,
+      recipients: notification.recipients
     })) as Notification[];
   } catch (error) {
     console.error("Exception fetching notifications:", error);
