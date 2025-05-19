@@ -13,6 +13,7 @@ import NotificationCenter from "./pages/NotificationCenter";
 import Settings from "./pages/Settings";
 import WorkerRegistration from "./pages/WorkerRegistration";
 import WorkerProfilePage from "./pages/WorkerProfilePage";
+import CompletedServices from "./pages/CompletedServices";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/worker-management" element={<WorkerManagement />} />
             <Route path="/pricing" element={<PricingManagement />} />
             <Route path="/bookings" element={<Bookings />} />
+            <Route path="/completed-services" element={<CompletedServices />} />
             <Route path="/notifications" element={<NotificationCenter />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/worker-registration" element={<WorkerRegistration />} />

@@ -6,7 +6,7 @@ export type City = "Mumbai" | "Delhi" | "Bangalore" | "Hyderabad" | "Chennai" | 
 export type Availability = "Full-Time" | "Part-Time" | "Weekends Only" | "Weekdays Only" | "Custom";
 export type IDType = "Aadhar Card" | "PAN Card" | "Driving License" | "Voter ID" | "Passport";
 export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
-export type NotificationType = "New Worker Application" | "Worker Verified" | "New Booking" | "Booking Completed" | "Payment Received";
+export type NotificationType = "New Worker Application" | "Worker Verified" | "New Booking" | "Booking Completed" | "Payment Received" | "Booking Cancelled";
 
 export interface Worker {
   id: string;
@@ -63,6 +63,8 @@ export interface Booking {
   amount: number;
   status: BookingStatus;
   notes?: string;
+  feedback?: string;
+  rating?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -73,6 +75,8 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
+  user_type?: 'admin' | 'worker' | 'customer';
+  user_identifier?: string;
 }
 
 export interface CategoryStat {

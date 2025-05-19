@@ -1,7 +1,7 @@
 
 // Import the properly configured supabase client
 import { supabase as configuredSupabase } from '@/integrations/supabase/client';
-import { Booking, BookingStatus, ServiceType } from '@/types';
+import { Booking, BookingStatus, ServiceType, Notification, NotificationType } from '@/types';
 
 // Export the configured client
 export const supabase = configuredSupabase;
@@ -95,12 +95,77 @@ export async function getRecentBookings(limit = 5) {
       amount: booking.amount || 0,
       status: booking.status as BookingStatus || "Pending",
       notes: "",
+      feedback: "", // New field for customer feedback
+      rating: 0, // New field for service rating
       createdAt: booking.created_at,
       updatedAt: booking.updated_at
     })) as Booking[];
   } catch (error) {
     console.error("Exception fetching bookings:", error);
     return [];
+  }
+}
+
+// Helper for fetching completed bookings
+export async function getCompletedBookings() {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('status', 'Completed')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching completed bookings:", error);
+      return [];
+    }
+    
+    // Map Supabase booking format to our application's Booking format
+    return data.map(booking => ({
+      id: booking.id,
+      customerId: booking.id, // Placeholder as we don't have this field
+      customerName: booking.customer_name || "Unknown",
+      customerEmail: booking.customer_email || "No email",
+      customerPhone: "N/A", // Not in the current schema
+      customerAddress: "N/A", // Not in the current schema
+      workerId: booking.worker_id || "",
+      workerName: "Assigned Worker", // We'll need to fetch this separately
+      serviceType: booking.service_type as ServiceType,
+      serviceName: booking.service_type || "Unknown Service",
+      serviceDuration: 2, // Default value since we don't have this field
+      serviceDate: booking.booking_date ? new Date(booking.booking_date).toLocaleDateString() : "N/A",
+      serviceTime: booking.booking_date ? new Date(booking.booking_date).toLocaleTimeString() : "N/A",
+      amount: booking.amount || 0,
+      status: "Completed" as BookingStatus,
+      notes: "",
+      feedback: "", // New field for customer feedback
+      rating: 0, // New field for service rating
+      createdAt: booking.created_at,
+      updatedAt: booking.updated_at
+    })) as Booking[];
+  } catch (error) {
+    console.error("Exception fetching completed bookings:", error);
+    return [];
+  }
+}
+
+// Helper to delete a booking
+export async function deleteBooking(bookingId: string) {
+  try {
+    const { error } = await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', bookingId);
+    
+    if (error) {
+      console.error("Error deleting booking:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception deleting booking:", error);
+    return false;
   }
 }
 
@@ -179,6 +244,96 @@ export async function deleteWorkerApplication(id: string) {
     return true;
   } catch (error) {
     console.error("Exception deleting worker:", error);
+    return false;
+  }
+}
+
+// Helper to add a notification
+export async function addNotification(notification: Omit<Notification, 'id' | 'createdAt'>) {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        type: notification.type,
+        message: notification.message,
+        read: false,
+        created_at: new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error("Error adding notification:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception adding notification:", error);
+    return false;
+  }
+}
+
+// Helper to get notifications
+export async function getNotifications() {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching notifications:", error);
+      return [];
+    }
+    
+    return data.map(notification => ({
+      id: notification.id,
+      type: notification.type as NotificationType,
+      message: notification.message,
+      read: notification.read,
+      createdAt: notification.created_at
+    })) as Notification[];
+  } catch (error) {
+    console.error("Exception fetching notifications:", error);
+    return [];
+  }
+}
+
+// Helper to mark a notification as read
+export async function markNotificationAsRead(id: string) {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error marking notification as read:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception marking notification as read:", error);
+    return false;
+  }
+}
+
+// Helper to mark all notifications as read
+export async function markAllNotificationsAsRead() {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('read', false);
+    
+    if (error) {
+      console.error("Error marking all notifications as read:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception marking all notifications as read:", error);
     return false;
   }
 }
