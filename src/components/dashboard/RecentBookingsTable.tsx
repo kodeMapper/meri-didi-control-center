@@ -49,6 +49,16 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
     }
   };
 
+  // Helper function to safely get initials
+  const getInitials = (name: string | undefined): string => {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map(n => n[0] || "")
+      .join("")
+      .toUpperCase();
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
@@ -90,14 +100,11 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-medium">
-                      {booking.customerName
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                      {getInitials(booking.customerName)}
                     </div>
                     <div>
-                      <div className="font-medium">{booking.customerName}</div>
-                      <div className="text-xs text-gray-500">{booking.customerEmail}</div>
+                      <div className="font-medium">{booking.customerName || "Unknown"}</div>
+                      <div className="text-xs text-gray-500">{booking.customerEmail || "No email"}</div>
                     </div>
                   </div>
                 </TableCell>
@@ -106,22 +113,22 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div>{booking.serviceName}</div>
-                    <div className="text-xs text-gray-500">{booking.serviceDuration} hours</div>
+                    <div>{booking.serviceName || "Unknown"}</div>
+                    <div className="text-xs text-gray-500">{booking.serviceDuration || 0} hours</div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div>{booking.serviceDate}</div>
-                    <div className="text-xs text-gray-500">{booking.serviceTime}</div>
+                    <div>{booking.serviceDate || "N/A"}</div>
+                    <div className="text-xs text-gray-500">{booking.serviceTime || "N/A"}</div>
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">
-                  ${booking.amount.toFixed(2)}
+                  ${(booking.amount || 0).toFixed(2)}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={getStatusColor(booking.status)}>
-                    {booking.status}
+                    {booking.status || "Unknown"}
                   </Badge>
                 </TableCell>
                 <TableCell>

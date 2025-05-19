@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { WorkerService, BookingService, StatsService, NotificationService } from "@/services/mockDatabase";
 import { Users, Calendar, Clock, CheckCircle } from "lucide-react";
@@ -8,13 +9,13 @@ import { RecentBookingsTable } from "@/components/dashboard/RecentBookingsTable"
 import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getWorkerApplications, WorkerApplication } from "@/lib/supabase";
+import { getWorkerApplications, WorkerApplication, getRecentBookings } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
-import { CategoryStat, Worker } from "@/types";
+import { CategoryStat, Worker, Booking } from "@/types";
 
 function Dashboard() {
   const [stats, setStats] = useState(StatsService.getStats());
-  const [recentBookings, setRecentBookings] = useState(BookingService.getRecent());
+  const [recentBookings, setRecentBookings] = useState<Booking[]>(BookingService.getRecent());
   const [pendingWorkers, setPendingWorkers] = useState<Worker[]>(WorkerService.getPending());
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -57,16 +58,9 @@ function Dashboard() {
           setPendingWorkers(transformedWorkers);
         }
         
-        // Load recent bookings (keeping the existing logic for now)
-        const { data: bookingsData, error: bookingsError } = await supabase
-          .from('bookings')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-          
-        if (bookingsError) {
-          console.error("Error loading bookings from Supabase:", bookingsError);
-        } else if (bookingsData) {
+        // Load recent bookings using our new helper
+        const bookingsData = await getRecentBookings(5);
+        if (bookingsData && bookingsData.length > 0) {
           setRecentBookings(bookingsData);
         }
       } catch (error) {
@@ -267,7 +261,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-1">
-          <WorkerCategoryChart data={stats.workersByCategory as CategoryStat[]} />
+          <WorkerCategoryChart data={stats.workersByCategory} />
         </div>
         <div className="xl:col-span-2">
           <PendingWorkersList
