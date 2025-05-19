@@ -8,6 +8,7 @@ import { RecentBookingsTable } from "@/components/dashboard/RecentBookingsTable"
 import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { getWorkerApplications, WorkerApplication } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { CategoryStat, Worker } from "@/types";
 
@@ -23,15 +24,9 @@ function Dashboard() {
     const loadFromSupabase = async () => {
       try {
         // Load pending workers from worker_applications table
-        const { data: pendingData, error } = await supabase
-          .from('worker_applications')
-          .select('*')
-          .eq('status', 'Pending')
-          .order('created_at', { ascending: false });
+        const pendingData = await getWorkerApplications('Pending');
           
-        if (error) {
-          console.error("Error fetching worker applications:", error);
-        } else if (pendingData && pendingData.length > 0) {
+        if (pendingData && pendingData.length > 0) {
           // Transform the data to match our Worker type structure
           const transformedWorkers: Worker[] = pendingData.map(worker => ({
             id: worker.id,
@@ -105,16 +100,12 @@ function Dashboard() {
         description: "Worker has been approved successfully.",
       });
       
-      // Refresh pending workers list from Supabase
-      const { data: refreshedData } = await supabase
-        .from('worker_applications')
-        .select('*')
-        .eq('status', 'Pending')
-        .order('created_at', { ascending: false });
-        
-      if (refreshedData) {
+      // Refresh pending workers list
+      const pendingData = await getWorkerApplications('Pending');
+      
+      if (pendingData) {
         // Transform the data to match our Worker type structure
-        const transformedWorkers: Worker[] = refreshedData.map(worker => ({
+        const transformedWorkers: Worker[] = pendingData.map(worker => ({
           id: worker.id,
           fullName: worker.full_name,
           email: worker.email,
@@ -176,16 +167,12 @@ function Dashboard() {
         variant: "destructive",
       });
       
-      // Refresh pending workers list from Supabase
-      const { data: refreshedData } = await supabase
-        .from('worker_applications')
-        .select('*')
-        .eq('status', 'Pending')
-        .order('created_at', { ascending: false });
-        
-      if (refreshedData) {
+      // Refresh pending workers list
+      const pendingData = await getWorkerApplications('Pending');
+      
+      if (pendingData) {
         // Transform the data to match our Worker type structure
-        const transformedWorkers: Worker[] = refreshedData.map(worker => ({
+        const transformedWorkers: Worker[] = pendingData.map(worker => ({
           id: worker.id,
           fullName: worker.full_name,
           email: worker.email,

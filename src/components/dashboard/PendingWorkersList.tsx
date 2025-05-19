@@ -23,6 +23,14 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
     setIsProfileOpen(true);
   };
   
+  const getInitials = (fullName: string): string => {
+    if (!fullName) return "?";
+    return fullName.split(" ")
+      .map(n => n[0] || "")
+      .join("")
+      .toUpperCase();
+  };
+  
   if (workers.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -64,17 +72,17 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
                 <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-semibold">
-                  {worker.fullName.split(" ").map(n => n[0]).join("")}
+                  {getInitials(worker.fullName)}
                 </div>
                 <div>
-                  <h4 className="font-medium">{worker.fullName}</h4>
-                  <p className="text-sm text-gray-500">{worker.email}</p>
+                  <h4 className="font-medium">{worker.fullName || "Unknown"}</h4>
+                  <p className="text-sm text-gray-500">{worker.email || "No email"}</p>
                   <div className="flex gap-2 mt-1">
                     <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
-                      {worker.serviceType}
+                      {worker.serviceType || "Unknown"}
                     </Badge>
                     <Badge variant="outline" className="bg-gray-100 text-gray-800">
-                      {worker.experience} years
+                      {worker.experience ? `${worker.experience} years` : "Experience N/A"}
                     </Badge>
                   </div>
                 </div>
