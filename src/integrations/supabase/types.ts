@@ -16,7 +16,9 @@ export type Database = {
           created_at: string
           customer_email: string
           customer_name: string
+          feedback: string | null
           id: string
+          rating: number | null
           service_type: string
           status: string
           updated_at: string
@@ -28,7 +30,9 @@ export type Database = {
           created_at?: string
           customer_email: string
           customer_name: string
+          feedback?: string | null
           id?: string
+          rating?: number | null
           service_type: string
           status?: string
           updated_at?: string
@@ -40,7 +44,9 @@ export type Database = {
           created_at?: string
           customer_email?: string
           customer_name?: string
+          feedback?: string | null
           id?: string
+          rating?: number | null
           service_type?: string
           status?: string
           updated_at?: string
@@ -55,6 +61,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean | null
+          type: string
+          user_identifier: string | null
+          user_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean | null
+          type: string
+          user_identifier?: string | null
+          user_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          type?: string
+          user_identifier?: string | null
+          user_type?: string | null
+        }
+        Relationships: []
       }
       worker_applications: {
         Row: {

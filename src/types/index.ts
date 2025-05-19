@@ -1,4 +1,3 @@
-
 export type ServiceType = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
 export type WorkerStatus = "Pending" | "Active" | "Inactive" | "Rejected";
 export type Gender = "Male" | "Female" | "Other";

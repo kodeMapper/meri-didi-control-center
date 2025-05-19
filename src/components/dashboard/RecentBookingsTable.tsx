@@ -20,6 +20,7 @@ import { Booking } from "@/types";
 import { Eye, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BookingDetails } from "./BookingDetails";
+import { useNavigate } from "react-router-dom";
 
 interface RecentBookingsTableProps {
   bookings: Booking[];
@@ -28,10 +29,15 @@ interface RecentBookingsTableProps {
 export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
     setIsDetailsOpen(true);
+  };
+  
+  const handleViewAll = () => {
+    navigate('/bookings');
   };
 
   const getStatusColor = (status: string) => {
@@ -75,7 +81,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
               <SelectItem value="Sweeping">Sweeping</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" className="text-primary">
+          <Button variant="outline" size="sm" className="text-primary" onClick={handleViewAll}>
             View All
           </Button>
         </div>

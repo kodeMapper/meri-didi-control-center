@@ -95,8 +95,8 @@ export async function getRecentBookings(limit = 5) {
       amount: booking.amount || 0,
       status: booking.status as BookingStatus || "Pending",
       notes: "",
-      feedback: "", // New field for customer feedback
-      rating: 0, // New field for service rating
+      feedback: booking.feedback || "", // Using the new field
+      rating: booking.rating || 0, // Using the new field
       createdAt: booking.created_at,
       updatedAt: booking.updated_at
     })) as Booking[];
@@ -138,8 +138,8 @@ export async function getCompletedBookings() {
       amount: booking.amount || 0,
       status: "Completed" as BookingStatus,
       notes: "",
-      feedback: "", // New field for customer feedback
-      rating: 0, // New field for service rating
+      feedback: booking.feedback || "", // Using the new field
+      rating: booking.rating || 0, // Using the new field
       createdAt: booking.created_at,
       updatedAt: booking.updated_at
     })) as Booking[];
@@ -257,6 +257,8 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'c
         type: notification.type,
         message: notification.message,
         read: false,
+        user_type: notification.user_type,
+        user_identifier: notification.user_identifier,
         created_at: new Date().toISOString()
       });
     
@@ -290,7 +292,9 @@ export async function getNotifications() {
       type: notification.type as NotificationType,
       message: notification.message,
       read: notification.read,
-      createdAt: notification.created_at
+      createdAt: notification.created_at,
+      user_type: notification.user_type,
+      user_identifier: notification.user_identifier
     })) as Notification[];
   } catch (error) {
     console.error("Exception fetching notifications:", error);
