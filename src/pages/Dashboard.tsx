@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { Worker, Booking, Stats, CategoryStat } from "@/types";
 import { WorkerService, BookingService, StatsService, NotificationService } from "@/services/mockDatabase";
 import { Users, Calendar, Clock, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -9,85 +9,63 @@ import { RecentBookingsTable } from "@/components/dashboard/RecentBookingsTable"
 import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getWorkerApplications, WorkerApplication, getRecentBookings } from "@/lib/supabase";
-import { supabase } from "@/integrations/supabase/client";
-import { CategoryStat, Worker, Booking } from "@/types";
+import { 
+  getWorkerApplications, 
+  getRecentBookings, 
+  mapWorkerApplicationToWorker, 
+  updateWorkerApplicationStatus, 
+  deleteWorkerApplication 
+} from "@/lib/supabase";
 
 function Dashboard() {
-  const [stats, setStats] = useState(StatsService.getStats());
+  const [stats, setStats] = useState<Stats>(StatsService.getStats());
   const [recentBookings, setRecentBookings] = useState<Booking[]>(BookingService.getRecent());
   const [pendingWorkers, setPendingWorkers] = useState<Worker[]>(WorkerService.getPending());
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load data from Supabase
-    const loadFromSupabase = async () => {
+    // Load data from Supabase and update state
+    const loadData = async () => {
+      setIsLoading(true);
       try {
         // Load pending workers from worker_applications table
         const pendingData = await getWorkerApplications('Pending');
           
         if (pendingData && pendingData.length > 0) {
           // Transform the data to match our Worker type structure
-          const transformedWorkers: Worker[] = pendingData.map(worker => ({
-            id: worker.id,
-            fullName: worker.full_name,
-            email: worker.email,
-            phone: worker.phone,
-            address: worker.address,
-            city: worker.city as any,
-            gender: worker.gender as any,
-            dateOfBirth: worker.date_of_birth,
-            serviceType: worker.service_type as any,
-            experience: worker.experience,
-            availability: worker.availability as any,
-            idType: worker.id_type as any,
-            idNumber: worker.id_number,
-            about: worker.about,
-            skills: worker.skills || [],
-            status: worker.status as any,
-            rating: worker.rating,
-            totalBookings: worker.total_bookings,
-            completionRate: worker.completion_rate,
-            createdAt: worker.created_at,
-            updatedAt: worker.updated_at,
-            idProofUrl: worker.id_proof_url,
-            photoUrl: worker.photo_url,
-          }));
-          
+          const transformedWorkers = pendingData.map(worker => mapWorkerApplicationToWorker(worker));
           setPendingWorkers(transformedWorkers);
         }
         
-        // Load recent bookings using our new helper
+        // Load recent bookings using our helper
         const bookingsData = await getRecentBookings(5);
         if (bookingsData && bookingsData.length > 0) {
           setRecentBookings(bookingsData);
         }
       } catch (error) {
-        console.error("Error in Supabase data loading:", error);
+        console.error("Error in data loading:", error);
+        // Keep existing mock data if Supabase fails
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    loadFromSupabase();
+    loadData();
   }, []);
 
   const handleApproveWorker = async (workerId: string) => {
     try {
-      // Update in local service
-      WorkerService.update(workerId, { status: "Active" });
-      
       // Update in Supabase
-      const { error } = await supabase
-        .from('worker_applications')
-        .update({ 
-          status: 'Active', 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', workerId);
-
-      if (error) {
-        throw error;
+      const success = await updateWorkerApplicationStatus(workerId, 'Active');
+      
+      if (!success) {
+        throw new Error("Failed to update worker status");
       }
+      
+      // Also update in mock database for compatibility
+      WorkerService.update(workerId, { status: "Active" });
       
       toast({
         title: "Worker Approved",
@@ -99,32 +77,7 @@ function Dashboard() {
       
       if (pendingData) {
         // Transform the data to match our Worker type structure
-        const transformedWorkers: Worker[] = pendingData.map(worker => ({
-          id: worker.id,
-          fullName: worker.full_name,
-          email: worker.email,
-          phone: worker.phone,
-          address: worker.address,
-          city: worker.city as any,
-          gender: worker.gender as any,
-          dateOfBirth: worker.date_of_birth,
-          serviceType: worker.service_type as any,
-          experience: worker.experience,
-          availability: worker.availability as any,
-          idType: worker.id_type as any,
-          idNumber: worker.id_number,
-          about: worker.about,
-          skills: worker.skills || [],
-          status: worker.status as any,
-          rating: worker.rating,
-          totalBookings: worker.total_bookings,
-          completionRate: worker.completion_rate,
-          createdAt: worker.created_at,
-          updatedAt: worker.updated_at,
-          idProofUrl: worker.id_proof_url,
-          photoUrl: worker.photo_url,
-        }));
-        
+        const transformedWorkers = pendingData.map(worker => mapWorkerApplicationToWorker(worker));
         setPendingWorkers(transformedWorkers);
       }
     } catch (error) {
@@ -139,21 +92,15 @@ function Dashboard() {
 
   const handleRejectWorker = async (workerId: string) => {
     try {
-      // Update in local service
-      WorkerService.update(workerId, { status: "Rejected" });
-      
       // Update in Supabase
-      const { error } = await supabase
-        .from('worker_applications')
-        .update({ 
-          status: 'Rejected', 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', workerId);
-
-      if (error) {
-        throw error;
+      const success = await updateWorkerApplicationStatus(workerId, 'Rejected');
+      
+      if (!success) {
+        throw new Error("Failed to update worker status");
       }
+      
+      // Also update in mock database for compatibility
+      WorkerService.update(workerId, { status: "Rejected" });
       
       toast({
         title: "Worker Rejected",
@@ -166,32 +113,7 @@ function Dashboard() {
       
       if (pendingData) {
         // Transform the data to match our Worker type structure
-        const transformedWorkers: Worker[] = pendingData.map(worker => ({
-          id: worker.id,
-          fullName: worker.full_name,
-          email: worker.email,
-          phone: worker.phone,
-          address: worker.address,
-          city: worker.city as any,
-          gender: worker.gender as any,
-          dateOfBirth: worker.date_of_birth,
-          serviceType: worker.service_type as any,
-          experience: worker.experience,
-          availability: worker.availability as any,
-          idType: worker.id_type as any,
-          idNumber: worker.id_number,
-          about: worker.about,
-          skills: worker.skills || [],
-          status: worker.status as any,
-          rating: worker.rating,
-          totalBookings: worker.total_bookings,
-          completionRate: worker.completion_rate,
-          createdAt: worker.created_at,
-          updatedAt: worker.updated_at,
-          idProofUrl: worker.id_proof_url,
-          photoUrl: worker.photo_url,
-        }));
-        
+        const transformedWorkers = pendingData.map(worker => mapWorkerApplicationToWorker(worker));
         setPendingWorkers(transformedWorkers);
       }
     } catch (error) {
@@ -203,6 +125,14 @@ function Dashboard() {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-48 flex items-center justify-center">
+        <p className="text-gray-500">Loading dashboard data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -261,7 +191,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-1">
-          <WorkerCategoryChart data={stats.workersByCategory} />
+          <WorkerCategoryChart data={stats.workersByCategory as any[]} />
         </div>
         <div className="xl:col-span-2">
           <PendingWorkersList

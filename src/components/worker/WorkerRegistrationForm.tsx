@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { WorkerService } from '@/services/mockDatabase';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 enum RegistrationStep {
   PersonalInfo = 1,
@@ -194,7 +194,7 @@ export function WorkerRegistrationForm() {
         photoUrl = await uploadFileToSupabase(photoFile, 'photos');
       }
 
-      // Save to local mock database
+      // Save to local mock database for compatibility
       const worker = WorkerService.create({
         fullName: personalInfo.fullName,
         email: personalInfo.email,
@@ -245,28 +245,27 @@ export function WorkerRegistrationForm() {
           description: `Error saving to database: ${error.message}`,
           variant: "destructive",
         });
-        // Continue anyway since we have local storage
       } else {
         toast({
           title: "Registration Successful",
           description: "Your application has been submitted and saved to the database.",
         });
-      }
 
-      // Reset forms and go back to first step
-      personalInfoForm.reset();
-      professionalDetailsForm.reset();
-      documentsForm.reset();
-      setPersonalInfo(null);
-      setProfessionalDetails(null);
-      setIdProofFile(null);
-      setPhotoFile(null);
-      setIdProofPreview(null);
-      setPhotoPreview(null);
-      setCurrentStep(RegistrationStep.PersonalInfo);
-      
-      // Navigate to dashboard or worker management
-      navigate("/worker-management");
+        // Reset forms and go back to first step
+        personalInfoForm.reset();
+        professionalDetailsForm.reset();
+        documentsForm.reset();
+        setPersonalInfo(null);
+        setProfessionalDetails(null);
+        setIdProofFile(null);
+        setPhotoFile(null);
+        setIdProofPreview(null);
+        setPhotoPreview(null);
+        setCurrentStep(RegistrationStep.PersonalInfo);
+        
+        // Navigate to dashboard or worker management
+        navigate("/worker-management");
+      }
     } catch (error) {
       console.error('Registration error:', error);
       toast({

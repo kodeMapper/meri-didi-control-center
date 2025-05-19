@@ -1,6 +1,7 @@
 
 // Import the properly configured supabase client
 import { supabase as configuredSupabase } from '@/integrations/supabase/client';
+import { Booking, BookingStatus, ServiceType } from '@/types';
 
 // Export the configured client
 export const supabase = configuredSupabase;
@@ -80,25 +81,104 @@ export async function getRecentBookings(limit = 5) {
     return data.map(booking => ({
       id: booking.id,
       customerId: booking.id, // Placeholder as we don't have this field
-      customerName: booking.customer_name,
-      customerEmail: booking.customer_email,
+      customerName: booking.customer_name || "Unknown",
+      customerEmail: booking.customer_email || "No email",
       customerPhone: "N/A", // Not in the current schema
       customerAddress: "N/A", // Not in the current schema
       workerId: booking.worker_id || "",
       workerName: "Assigned Worker", // We'll need to fetch this separately
-      serviceType: booking.service_type as any,
-      serviceName: booking.service_type,
+      serviceType: booking.service_type as ServiceType,
+      serviceName: booking.service_type || "Unknown Service",
       serviceDuration: 2, // Default value since we don't have this field
-      serviceDate: new Date(booking.booking_date).toLocaleDateString(),
-      serviceTime: new Date(booking.booking_date).toLocaleTimeString(),
-      amount: booking.amount,
-      status: booking.status,
+      serviceDate: booking.booking_date ? new Date(booking.booking_date).toLocaleDateString() : "N/A",
+      serviceTime: booking.booking_date ? new Date(booking.booking_date).toLocaleTimeString() : "N/A",
+      amount: booking.amount || 0,
+      status: booking.status as BookingStatus || "Pending",
       notes: "",
       createdAt: booking.created_at,
-      updatedAt: booking.updated_at,
-    }));
+      updatedAt: booking.updated_at
+    })) as Booking[];
   } catch (error) {
     console.error("Exception fetching bookings:", error);
     return [];
+  }
+}
+
+// Helper to convert WorkerApplication to Worker type
+export function mapWorkerApplicationToWorker(app: WorkerApplication) {
+  return {
+    id: app.id,
+    fullName: app.full_name,
+    email: app.email,
+    phone: app.phone,
+    address: app.address,
+    city: app.city as any,
+    gender: app.gender as any,
+    dateOfBirth: app.date_of_birth,
+    serviceType: app.service_type as any,
+    experience: app.experience,
+    availability: app.availability as any,
+    idType: app.id_type as any,
+    idNumber: app.id_number,
+    about: app.about,
+    skills: app.skills || [],
+    status: app.status as any,
+    rating: app.rating,
+    totalBookings: app.total_bookings,
+    completionRate: app.completion_rate,
+    createdAt: app.created_at,
+    updatedAt: app.updated_at,
+    idProofUrl: app.id_proof_url,
+    photoUrl: app.photo_url,
+    joiningDate: app.created_at
+  };
+}
+
+// Helper to get worker applications as Worker[] type
+export async function getWorkersFromApplications(status?: string) {
+  const applications = await getWorkerApplications(status);
+  return applications.map(app => mapWorkerApplicationToWorker(app));
+}
+
+// Helper to update worker application status
+export async function updateWorkerApplicationStatus(id: string, status: string) {
+  try {
+    const { error } = await supabase
+      .from('worker_applications')
+      .update({ 
+        status, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error updating worker status:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception updating worker status:", error);
+    return false;
+  }
+}
+
+// Helper to delete worker application
+export async function deleteWorkerApplication(id: string) {
+  try {
+    const { error } = await supabase
+      .from('worker_applications')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error deleting worker:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception deleting worker:", error);
+    return false;
   }
 }

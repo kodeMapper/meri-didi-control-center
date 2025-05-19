@@ -31,7 +31,12 @@ import { Eye, Edit, CheckCircle, Trash, User, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PendingWorkersList } from "@/components/dashboard/PendingWorkersList";
 import { WorkerProfile } from "@/components/worker/WorkerProfile";
-import { supabase, checkSupabaseConnection } from "@/lib/supabase";
+import { 
+  supabase, 
+  getWorkersFromApplications, 
+  updateWorkerApplicationStatus,
+  deleteWorkerApplication
+} from "@/lib/supabase";
 
 function WorkerManagement() {
   const [activeWorkers, setActiveWorkers] = useState<Worker[]>([]);
@@ -39,6 +44,7 @@ function WorkerManagement() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All Categories");
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -48,32 +54,29 @@ function WorkerManagement() {
   }, []);
   
   const loadWorkers = async () => {
-    // Try to load from Supabase first if connected
-    if (checkSupabaseConnection()) {
-      try {
-        const { data: activeData, error: activeError } = await supabase
-          .from('workers')
-          .select('*')
-          .eq('status', 'Active');
-          
-        const { data: pendingData, error: pendingError } = await supabase
-          .from('workers')
-          .select('*')
-          .eq('status', 'Pending');
-          
-        if (!activeError && !pendingError) {
-          setActiveWorkers(activeData || []);
-          setPendingWorkers(pendingData || []);
-          return;
-        }
-      } catch (error) {
-        console.error("Error loading from Supabase:", error);
-      }
+    setIsLoading(true);
+    try {
+      // Load active workers
+      const activeWorkersData = await getWorkersFromApplications('Active');
+      setActiveWorkers(activeWorkersData);
+      
+      // Load pending workers
+      const pendingWorkersData = await getWorkersFromApplications('Pending');
+      setPendingWorkers(pendingWorkersData);
+    } catch (error) {
+      console.error("Error loading workers:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load workers data",
+        variant: "destructive",
+      });
+      
+      // Fallback to mock database
+      setActiveWorkers(WorkerService.getActive());
+      setPendingWorkers(WorkerService.getPending());
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Fallback to mock database
-    setActiveWorkers(WorkerService.getActive());
-    setPendingWorkers(WorkerService.getPending());
   };
 
   const filteredActiveWorkers = selectedCategory === "All Categories" 
@@ -85,100 +88,116 @@ function WorkerManagement() {
   };
 
   const handleActivateWorker = async (id: string) => {
-    WorkerService.update(id, { status: "Active" });
-    
-    // Update Supabase if connected
-    if (checkSupabaseConnection()) {
-      try {
-        await supabase
-          .from('workers')
-          .update({ status: 'Active', updatedAt: new Date().toISOString() })
-          .eq('id', id);
-      } catch (error) {
-        console.error("Error updating Supabase:", error);
+    try {
+      // Update in Supabase
+      const success = await updateWorkerApplicationStatus(id, 'Active');
+      if (!success) {
+        throw new Error("Failed to update worker status");
       }
+
+      // Also update in mock database for compatibility
+      WorkerService.update(id, { status: "Active" });
+      
+      toast({
+        title: "Worker Activated",
+        description: "Worker has been activated successfully.",
+      });
+      
+      // Refresh worker lists
+      await loadWorkers();
+    } catch (error) {
+      console.error("Error activating worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to activate worker",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Worker Activated",
-      description: "Worker has been activated successfully.",
-    });
-    
-    // Refresh worker lists
-    await loadWorkers();
   };
 
   const handleDeactivateWorker = async (id: string) => {
-    WorkerService.update(id, { status: "Inactive" });
-    
-    // Update Supabase if connected
-    if (checkSupabaseConnection()) {
-      try {
-        await supabase
-          .from('workers')
-          .update({ status: 'Inactive', updatedAt: new Date().toISOString() })
-          .eq('id', id);
-      } catch (error) {
-        console.error("Error updating Supabase:", error);
+    try {
+      // Update in Supabase
+      const success = await updateWorkerApplicationStatus(id, 'Inactive');
+      if (!success) {
+        throw new Error("Failed to update worker status");
       }
+
+      // Also update in mock database for compatibility
+      WorkerService.update(id, { status: "Inactive" });
+      
+      toast({
+        title: "Worker Deactivated",
+        description: "Worker has been deactivated.",
+      });
+      
+      // Refresh worker lists
+      await loadWorkers();
+    } catch (error) {
+      console.error("Error deactivating worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate worker",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Worker Deactivated",
-      description: "Worker has been deactivated.",
-    });
-    
-    // Refresh worker lists
-    await loadWorkers();
   };
 
   const handleApproveWorker = async (workerId: string) => {
-    WorkerService.update(workerId, { status: "Active" });
-    
-    // Update Supabase if connected
-    if (checkSupabaseConnection()) {
-      try {
-        await supabase
-          .from('workers')
-          .update({ status: 'Active', updatedAt: new Date().toISOString() })
-          .eq('id', workerId);
-      } catch (error) {
-        console.error("Error updating Supabase:", error);
+    try {
+      // Update in Supabase
+      const success = await updateWorkerApplicationStatus(workerId, 'Active');
+      if (!success) {
+        throw new Error("Failed to update worker status");
       }
+
+      // Also update in mock database for compatibility
+      WorkerService.update(workerId, { status: "Active" });
+      
+      toast({
+        title: "Worker Approved",
+        description: "Worker has been approved successfully.",
+      });
+      
+      // Refresh worker lists
+      await loadWorkers();
+    } catch (error) {
+      console.error("Error approving worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to approve worker",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Worker Approved",
-      description: "Worker has been approved successfully.",
-    });
-    
-    // Refresh worker lists
-    await loadWorkers();
   };
 
   const handleRejectWorker = async (workerId: string) => {
-    WorkerService.update(workerId, { status: "Rejected" });
-    
-    // Update Supabase if connected
-    if (checkSupabaseConnection()) {
-      try {
-        await supabase
-          .from('workers')
-          .update({ status: 'Rejected', updatedAt: new Date().toISOString() })
-          .eq('id', workerId);
-      } catch (error) {
-        console.error("Error updating Supabase:", error);
+    try {
+      // Update in Supabase
+      const success = await updateWorkerApplicationStatus(workerId, 'Rejected');
+      if (!success) {
+        throw new Error("Failed to update worker status");
       }
+
+      // Also update in mock database for compatibility
+      WorkerService.update(workerId, { status: "Rejected" });
+      
+      toast({
+        title: "Worker Rejected",
+        description: "Worker has been rejected.",
+        variant: "destructive",
+      });
+      
+      // Refresh worker lists
+      await loadWorkers();
+    } catch (error) {
+      console.error("Error rejecting worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reject worker",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Worker Rejected",
-      description: "Worker has been rejected.",
-      variant: "destructive",
-    });
-    
-    // Refresh worker lists
-    await loadWorkers();
   };
 
   const handleVerifyWorker = (id: string) => {
@@ -190,33 +209,47 @@ function WorkerManagement() {
   };
 
   const handleDeleteWorker = async (id: string) => {
-    WorkerService.delete(id);
-    
-    // Update Supabase if connected
-    if (checkSupabaseConnection()) {
-      try {
-        await supabase
-          .from('workers')
-          .delete()
-          .eq('id', id);
-      } catch (error) {
-        console.error("Error deleting from Supabase:", error);
+    try {
+      // Delete from Supabase
+      const success = await deleteWorkerApplication(id);
+      if (!success) {
+        throw new Error("Failed to delete worker");
       }
+
+      // Also delete from mock database for compatibility
+      WorkerService.delete(id);
+      
+      toast({
+        title: "Worker Deleted",
+        description: "Worker has been deleted successfully.",
+        variant: "destructive",
+      });
+      
+      // Refresh worker lists
+      await loadWorkers();
+    } catch (error) {
+      console.error("Error deleting worker:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete worker",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Worker Deleted",
-      description: "Worker has been deleted successfully.",
-      variant: "destructive",
-    });
-    
-    // Refresh worker lists
-    await loadWorkers();
   };
 
   const handleQuickViewWorker = (id: string) => {
     setSelectedWorkerId(id);
     setIsProfileOpen(true);
+  };
+
+  // Safe helper to get initials from a name
+  const getInitials = (fullName: string | undefined): string => {
+    if (!fullName) return "?";
+    return fullName
+      .split(" ")
+      .map((n) => n[0] || "")
+      .join("")
+      .toUpperCase();
   };
 
   const getStatusBadgeStyle = (status: string) => {
@@ -233,6 +266,14 @@ function WorkerManagement() {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-48 flex items-center justify-center">
+        <p className="text-gray-500">Loading worker data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -303,10 +344,7 @@ function WorkerManagement() {
                               />
                             ) : (
                               <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-medium">
-                                {worker.fullName
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
+                                {getInitials(worker.fullName)}
                               </div>
                             )}
                             <div>
@@ -427,7 +465,7 @@ function WorkerManagement() {
                           />
                         ) : (
                           <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-medium">
-                            {worker.fullName.split(" ").map(n => n[0]).join("")}
+                            {getInitials(worker.fullName)}
                           </div>
                         )}
                         <div>

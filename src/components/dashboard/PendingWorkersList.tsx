@@ -23,7 +23,8 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
     setIsProfileOpen(true);
   };
   
-  const getInitials = (fullName: string): string => {
+  // Safe helper to get initials from a name
+  const getInitials = (fullName: string | undefined): string => {
     if (!fullName) return "?";
     return fullName.split(" ")
       .map(n => n[0] || "")
@@ -71,9 +72,17 @@ export function PendingWorkersList({ workers, onApprove, onReject }: PendingWork
           <div key={worker.id} className="border rounded-lg p-4">
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
-                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-semibold">
-                  {getInitials(worker.fullName)}
-                </div>
+                {worker.photoUrl ? (
+                  <img 
+                    src={worker.photoUrl} 
+                    alt={worker.fullName || "Worker"}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800 font-semibold">
+                    {getInitials(worker.fullName)}
+                  </div>
+                )}
                 <div>
                   <h4 className="font-medium">{worker.fullName || "Unknown"}</h4>
                   <p className="text-sm text-gray-500">{worker.email || "No email"}</p>

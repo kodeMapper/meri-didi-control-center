@@ -56,6 +56,84 @@ export type Database = {
           },
         ]
       }
+      worker_applications: {
+        Row: {
+          about: string
+          address: string
+          availability: string
+          city: string
+          completion_rate: number | null
+          created_at: string
+          date_of_birth: string
+          email: string
+          experience: number
+          full_name: string
+          gender: string
+          id: string
+          id_number: string
+          id_proof_url: string | null
+          id_type: string
+          phone: string
+          photo_url: string | null
+          rating: number | null
+          service_type: string
+          skills: string[] | null
+          status: string
+          total_bookings: number | null
+          updated_at: string
+        }
+        Insert: {
+          about: string
+          address: string
+          availability: string
+          city: string
+          completion_rate?: number | null
+          created_at?: string
+          date_of_birth: string
+          email: string
+          experience: number
+          full_name: string
+          gender: string
+          id?: string
+          id_number: string
+          id_proof_url?: string | null
+          id_type: string
+          phone: string
+          photo_url?: string | null
+          rating?: number | null
+          service_type: string
+          skills?: string[] | null
+          status?: string
+          total_bookings?: number | null
+          updated_at?: string
+        }
+        Update: {
+          about?: string
+          address?: string
+          availability?: string
+          city?: string
+          completion_rate?: number | null
+          created_at?: string
+          date_of_birth?: string
+          email?: string
+          experience?: number
+          full_name?: string
+          gender?: string
+          id?: string
+          id_number?: string
+          id_proof_url?: string | null
+          id_type?: string
+          phone?: string
+          photo_url?: string | null
+          rating?: number | null
+          service_type?: string
+          skills?: string[] | null
+          status?: string
+          total_bookings?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workers: {
         Row: {
           about: string | null

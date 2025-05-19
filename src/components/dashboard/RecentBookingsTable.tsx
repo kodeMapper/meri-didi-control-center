@@ -95,7 +95,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.map((booking) => (
+            {bookings.length > 0 ? bookings.map((booking) => (
               <TableRow key={booking.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                   ${(booking.amount || 0).toFixed(2)}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={getStatusColor(booking.status)}>
+                  <Badge variant="outline" className={getStatusColor(booking.status || "Unknown")}>
                     {booking.status || "Unknown"}
                   </Badge>
                 </TableCell>
@@ -147,7 +147,13 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            )) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                  No bookings found
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
