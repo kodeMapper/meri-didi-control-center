@@ -36,8 +36,8 @@ export function SendNotification({ onNotificationSent }: SendNotificationProps) 
   const [scheduledTime, setScheduledTime] = useState<string>("");
   const [attachment, setAttachment] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<string>("recipients");
-  const [selectedCity, setSelectedCity] = useState<string>("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("all-cities"); // Changed from empty string to a valid value
+  const [selectedStatus, setSelectedStatus] = useState<string>("all-statuses"); // Changed from empty string to a valid value
   const [includeEmailParams, setIncludeEmailParams] = useState({
     userId: false,
     userName: false,
@@ -85,15 +85,29 @@ export function SendNotification({ onNotificationSent }: SendNotificationProps) 
           break;
       }
       
-      await addNotification({
+      // Only include notification_method as a separate property in local notification object
+      const notificationData = {
         type: notificationType,
         title,
         message,
         read: false,
         user_type,
         recipients,
-        method: notificationMethod,
         scheduled: scheduledDate && scheduledTime ? `${scheduledDate}T${scheduledTime}` : undefined,
+        notification_method: notificationMethod // Store as property but don't pass directly to addNotification
+      };
+      
+      // Extract the properties that match the addNotification parameter type
+      const { type, message: msg, title: ttl, read, user_type: ut, recipients: rcpts, scheduled } = notificationData;
+      
+      await addNotification({
+        type,
+        message: msg,
+        title: ttl,
+        read,
+        user_type: ut,
+        recipients: rcpts,
+        scheduled
       });
       
       toast({
@@ -195,7 +209,7 @@ export function SendNotification({ onNotificationSent }: SendNotificationProps) 
                     <SelectValue placeholder="All Cities" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Cities</SelectItem>
+                    <SelectItem value="all-cities">All Cities</SelectItem>
                     {cities.map(city => (
                       <SelectItem key={city} value={city}>{city}</SelectItem>
                     ))}
@@ -213,7 +227,7 @@ export function SendNotification({ onNotificationSent }: SendNotificationProps) 
                     <SelectValue placeholder="All Statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all-statuses">All Statuses</SelectItem>
                     {statuses.map(status => (
                       <SelectItem key={status} value={status}>{status}</SelectItem>
                     ))}

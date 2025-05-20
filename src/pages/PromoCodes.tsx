@@ -1,950 +1,656 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { 
+  Edit, 
+  Trash2, 
+  Search, 
+  Plus, 
+  Calendar, 
+  RefreshCcw, 
+  Download, 
+  Check,
+  Filter, 
+  Copy
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Filter, Search, Download, MoreVertical, Edit, Trash2, Copy, Plus, Calendar, Upload, AlertCircle, DollarSign, Info } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { addPromoCode, getPromoCodes, updatePromoCode, deletePromoCode } from "@/lib/supabase";
+import { format } from 'date-fns';
+import { DateRange } from "react-day-picker";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { PromoCode } from "@/types";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const samplePromoCodes: PromoCode[] = [
-  {
-    id: "57",
-    code: "SAVE15",
-    discount: 15,
-    discountType: "Percentage",
-    maxDiscount: 200,
-    minOrderValue: 1000,
-    expiryDate: "2025-04-09",
-    usageLimit: 100,
-    usageCount: 23,
-    isActive: true,
-    createdAt: "2025-03-15",
-    description: "15% off on all services",
-  },
-  {
-    id: "56",
-    code: "SAVE20",
-    discount: 20,
-    discountType: "Percentage",
-    maxDiscount: 300,
-    minOrderValue: 1500,
-    expiryDate: "2025-04-09",
-    usageLimit: 50,
-    usageCount: 12,
-    isActive: true,
-    createdAt: "2025-03-10",
-    description: "20% off on all services",
-  },
-  {
-    id: "54",
-    code: "10%OFF",
-    discount: 10,
-    discountType: "Percentage",
-    maxDiscount: 100,
-    minOrderValue: 500,
-    expiryDate: "2025-02-20",
-    usageLimit: 200,
-    usageCount: 87,
-    isActive: true,
-    createdAt: "2024-02-20",
-    description: "10% off on all services",
-  },
-  {
-    id: "53",
-    code: "25%OFF",
-    discount: 25,
-    discountType: "Percentage",
-    maxDiscount: 500,
-    minOrderValue: 2000,
-    expiryDate: "2024-02-20",
-    usageLimit: 30,
-    usageCount: 28,
-    isActive: true,
-    createdAt: "2024-02-20",
-    description: "25% off on premium services",
-  },
-  {
-    id: "52",
-    code: "R&R",
-    discount: 100,
-    discountType: "Fixed",
-    maxDiscount: undefined,
-    minOrderValue: 500,
-    expiryDate: "2032-02-20",
-    usageLimit: 1000,
-    usageCount: 243,
-    isActive: true,
-    createdAt: "2024-02-20",
-    description: "Special referral discount",
-  },
-  {
-    id: "51",
-    code: "20OFF",
-    discount: 20,
-    discountType: "Fixed",
-    maxDiscount: undefined,
-    minOrderValue: 100,
-    expiryDate: "2032-02-20",
-    usageLimit: 5000,
-    usageCount: 1203,
-    isActive: true,
-    createdAt: "2024-02-20",
-    description: "Fixed ₹20 discount on all orders",
-  },
-  {
-    id: "50",
-    code: "FFF99",
-    discount: 99,
-    discountType: "Fixed",
-    maxDiscount: undefined,
-    minOrderValue: 500,
-    expiryDate: "2024-02-29",
-    usageLimit: 100,
-    usageCount: 42,
-    isActive: true,
-    createdAt: "2024-02-20",
-    description: "Special weekend discount",
-  },
-];
+interface PromoCode {
+  id: string;
+  code: string;
+  discount: number;
+  expires_at: string;
+  description: string;
+  usage_limit: number | null;
+  created_at: string;
+}
 
-export default function PromoCodes() {
-  const [promoCodes, setPromoCodes] = useState<PromoCode[]>(samplePromoCodes);
-  const [filter, setFilter] = useState<"all" | "active" | "deactive">("all");
+function PromoCodes() {
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [discount, setDiscount] = useState<number | "">("");
+  const [expiresAt, setExpiresAt] = useState<DateRange | undefined>(undefined);
+  const [description, setDescription] = useState("");
+  const [usageLimit, setUsageLimit] = useState<number | "">("");
+  const [selectedPromoCode, setSelectedPromoCode] = useState<PromoCode | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [codeToDelete, setCodeToDelete] = useState<string | null>(null);
-  const [editingCode, setEditingCode] = useState<PromoCode | null>(null);
-  const [newPromoCode, setNewPromoCode] = useState<Partial<PromoCode>>({
-    code: "",
-    discount: 0,
-    discountType: "Percentage",
-    maxDiscount: undefined,
-    minOrderValue: 0,
-    expiryDate: new Date().toISOString().split('T')[0],
-    usageLimit: 100,
-    isActive: true,
-    description: "",
-  });
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  
+  const [filterType, setFilterType] = useState("code");
+  const [isCopied, setIsCopied] = useState(false);
+  const [copiedPromoCode, setCopiedPromoCode] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const filteredPromoCodes = promoCodes
-    .filter(code => {
-      if (filter === "all") return true;
-      return filter === "active" ? code.isActive : !code.isActive;
-    })
-    .filter(code => {
-      if (!searchQuery) return true;
-      return (
-        code.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        code.id.toString().includes(searchQuery) ||
-        (code.description && code.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    });
+  useEffect(() => {
+    fetchPromoCodes();
+  }, []);
 
-  const handleAddPromoCode = () => {
-    if (!newPromoCode.code || !newPromoCode.discount || !newPromoCode.expiryDate) {
+  const fetchPromoCodes = async () => {
+    setLoading(true);
+    try {
+      const data = await getPromoCodes();
+      setPromoCodes(data);
+    } catch (error) {
+      console.error("Error fetching promo codes:", error);
       toast({
-        title: "Missing Information",
+        title: "Error",
+        description: "Failed to fetch promo codes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePromoCode = async () => {
+    if (!code || !discount || !expiresAt?.from || !description) {
+      toast({
+        title: "Error",
         description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
-    const newId = (Math.max(0, ...promoCodes.map(c => parseInt(c.id))) + 1).toString();
-    
-    setPromoCodes([
-      {
-        id: newId,
-        code: newPromoCode.code,
-        discount: newPromoCode.discount,
-        discountType: newPromoCode.discountType as "Percentage" | "Fixed",
-        maxDiscount: newPromoCode.maxDiscount,
-        minOrderValue: newPromoCode.minOrderValue,
-        expiryDate: newPromoCode.expiryDate,
-        usageLimit: newPromoCode.usageLimit || 100,
-        usageCount: 0,
-        isActive: newPromoCode.isActive || true,
-        createdAt: new Date().toISOString().split('T')[0],
-        description: newPromoCode.description,
-      },
-      ...promoCodes,
-    ]);
+    const expiresAtFrom = expiresAt.from ? format(expiresAt.from, 'yyyy-MM-dd') : '';
+    const expiresAtTo = expiresAt.to ? format(expiresAt.to, 'yyyy-MM-dd') : '';
 
-    setNewPromoCode({
-      code: "",
-      discount: 0,
-      discountType: "Percentage",
-      maxDiscount: undefined,
-      minOrderValue: 0,
-      expiryDate: new Date().toISOString().split('T')[0],
-      usageLimit: 100,
-      isActive: true,
-      description: "",
-    });
+    if (!expiresAtFrom || !expiresAtTo) {
+        toast({
+            title: "Error",
+            description: "Please select a valid date range",
+            variant: "destructive",
+        });
+        return;
+    }
 
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Success",
-      description: "Promocode has been added successfully",
-    });
+    const expiresAtCombined = `${expiresAtFrom}T00:00:00.000Z`;
+
+    try {
+      await addPromoCode({
+        code,
+        discount: Number(discount),
+        expires_at: expiresAtCombined,
+        description,
+        usage_limit: usageLimit ? Number(usageLimit) : null,
+      });
+      toast({
+        title: "Success",
+        description: "Promo code created successfully",
+      });
+      fetchPromoCodes();
+      setOpen(false);
+      clearForm();
+    } catch (error) {
+      console.error("Error creating promo code:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create promo code",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditPromoCode = () => {
-    if (!editingCode || !newPromoCode.code || !newPromoCode.discount || !newPromoCode.expiryDate) {
+  const handleEditPromoCode = async () => {
+    if (!selectedPromoCode) return;
+
+    if (!code || !discount || !expiresAt?.from || !description) {
       toast({
-        title: "Missing Information",
+        title: "Error",
         description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
-    setPromoCodes(promoCodes.map(promo => 
-      promo.id === editingCode.id 
-        ? {
-            ...promo,
-            code: newPromoCode.code || promo.code,
-            discount: newPromoCode.discount || promo.discount,
-            discountType: newPromoCode.discountType as "Percentage" | "Fixed" || promo.discountType,
-            maxDiscount: newPromoCode.maxDiscount,
-            minOrderValue: newPromoCode.minOrderValue || promo.minOrderValue,
-            expiryDate: newPromoCode.expiryDate || promo.expiryDate,
-            usageLimit: newPromoCode.usageLimit || promo.usageLimit,
-            isActive: newPromoCode.isActive !== undefined ? newPromoCode.isActive : promo.isActive,
-            description: newPromoCode.description || promo.description,
-          } 
-        : promo
-    ));
+    const expiresAtFrom = expiresAt.from ? format(expiresAt.from, 'yyyy-MM-dd') : '';
+    const expiresAtTo = expiresAt.to ? format(expiresAt.to, 'yyyy-MM-dd') : '';
 
-    setIsEditDialogOpen(false);
-    setEditingCode(null);
-    
+    if (!expiresAtFrom || !expiresAtTo) {
+        toast({
+            title: "Error",
+            description: "Please select a valid date range",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    const expiresAtCombined = `${expiresAtFrom}T00:00:00.000Z`;
+
+    try {
+      await updatePromoCode(selectedPromoCode.id, {
+        code,
+        discount: Number(discount),
+        expires_at: expiresAtCombined,
+        description,
+        usage_limit: usageLimit ? Number(usageLimit) : null,
+      });
+      toast({
+        title: "Success",
+        description: "Promo code updated successfully",
+      });
+      fetchPromoCodes();
+      setEditOpen(false);
+      clearForm();
+    } catch (error) {
+      console.error("Error updating promo code:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update promo code",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePromoCode = async (id: string) => {
+    try {
+      await deletePromoCode(id);
+      toast({
+        title: "Success",
+        description: "Promo code deleted successfully",
+      });
+      fetchPromoCodes();
+    } catch (error) {
+      console.error("Error deleting promo code:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete promo code",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOpenEditDialog = (promoCode: PromoCode) => {
+    setSelectedPromoCode(promoCode);
+    setCode(promoCode.code);
+    setDiscount(promoCode.discount);
+    setDescription(promoCode.description);
+    setUsageLimit(promoCode.usage_limit !== null ? promoCode.usage_limit : "");
+
+    // Parse the expires_at string to create a Date object
+    const expiresAtDate = new Date(promoCode.expires_at);
+
+    // Check if the date is valid before setting the state
+    if (!isNaN(expiresAtDate.getTime())) {
+        setExpiresAt({ from: expiresAtDate, to: expiresAtDate });
+    } else {
+        console.error("Invalid date format:", promoCode.expires_at);
+        setExpiresAt({ from: new Date(), to: new Date() });
+    }
+
+    setEditOpen(true);
+  };
+
+  const clearForm = () => {
+    setCode("");
+    setDiscount("");
+    setExpiresAt(undefined);
+    setDescription("");
+    setUsageLimit("");
+    setSelectedPromoCode(null);
+  };
+
+  const filteredPromoCodes = promoCodes.filter((promoCode) => {
+    const searchTerm = searchQuery.toLowerCase();
+    if (filterType === "code") {
+      return promoCode.code.toLowerCase().includes(searchTerm);
+    } else if (filterType === "description") {
+      return promoCode.description.toLowerCase().includes(searchTerm);
+    }
+    return false;
+  });
+
+  const handleCopyToClipboard = (promoCode: string) => {
+    navigator.clipboard.writeText(promoCode);
+    setCopiedPromoCode(promoCode);
+    setIsCopied(true);
+    setTimeout(() => {
+      setIsCopied(false);
+      setCopiedPromoCode(null);
+    }, 2000);
+  };
+
+  const handleExport = (format: string) => {
+    const dataStr = JSON.stringify(promoCodes, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+    const exportFileDefaultName = `promo_codes.${format}`;
+
+    let linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
     toast({
-      title: "PromoCode Updated",
-      description: "The promocode has been updated successfully",
+      title: "Export Successful",
+      description: `Promo codes exported as ${format.toUpperCase()}`
     });
-  };
-
-  const handleDeletePromoCode = () => {
-    if (codeToDelete === null) return;
-    
-    setPromoCodes(promoCodes.filter(promo => promo.id !== codeToDelete));
-    setIsDeleteDialogOpen(false);
-    setCodeToDelete(null);
-    
-    toast({
-      title: "PromoCode Deleted",
-      description: "The promocode has been deleted successfully",
-    });
-  };
-
-  const handleToggleStatus = (id: string) => {
-    setPromoCodes(promoCodes.map(promo => 
-      promo.id === id 
-        ? { ...promo, isActive: !promo.isActive } 
-        : promo
-    ));
-  };
-
-  const copyToClipboard = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    
-    toast({
-      title: "Code Copied",
-      description: `${code} has been copied to clipboard`,
-    });
-    
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
-  const duplicatePromoCode = (promo: PromoCode) => {
-    const newId = (Math.max(0, ...promoCodes.map(c => parseInt(c.id))) + 1).toString();
-    
-    const duplicated: PromoCode = {
-      ...promo,
-      id: newId,
-      code: `${promo.code}_COPY`,
-      usageCount: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    
-    setPromoCodes([duplicated, ...promoCodes]);
-    
-    toast({
-      title: "PromoCode Duplicated",
-      description: `A copy of ${promo.code} has been created`,
-    });
-  };
-
-  const openEditDialog = (promo: PromoCode) => {
-    setEditingCode(promo);
-    setNewPromoCode({
-      code: promo.code,
-      discount: promo.discount,
-      discountType: promo.discountType,
-      maxDiscount: promo.maxDiscount,
-      minOrderValue: promo.minOrderValue,
-      expiryDate: promo.expiryDate,
-      usageLimit: promo.usageLimit,
-      isActive: promo.isActive,
-      description: promo.description,
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const openDeleteDialog = (id: string) => {
-    setCodeToDelete(id);
-    setIsDeleteDialogOpen(true);
-  };
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div>
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Promo Codes</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-1">
-          <Plus size={16} />
-          Add Promocodes
-        </Button>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex space-x-2">
-          <Button 
-            variant={filter === "all" ? "default" : "outline"} 
-            onClick={() => setFilter("all")}
-            className="text-sm h-9"
-          >
-            All
-          </Button>
-          <Button 
-            variant={filter === "active" ? "default" : "outline"} 
-            onClick={() => setFilter("active")}
-            className="text-sm h-9"
-          >
-            Active
-          </Button>
-          <Button 
-            variant={filter === "deactive" ? "default" : "outline"} 
-            onClick={() => setFilter("deactive")}
-            className="text-sm h-9"
-          >
-            Deactive
-          </Button>
-        </div>
-        <div className="flex flex-1 gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search size={16} className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
             <Input
               type="search"
-              placeholder="Search promocodes..."
-              className="pl-10"
+              placeholder="Search promo codes..."
+              className="pl-10 w-full sm:w-[200px]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="icon" title="More filters">
-            <Filter size={18} />
-          </Button>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Filter by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="code">Code</SelectItem>
+              <SelectItem value="description">Description</SelectItem>
+            </SelectContent>
+          </Select>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-1">
-                <Download size={16} />
-                <span className="hidden sm:inline">Download</span>
+              <Button variant="outline" size="icon">
+                <Filter size={16} className="text-gray-500" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Export as CSV</DropdownMenuItem>
-              <DropdownMenuItem>Export as Excel</DropdownMenuItem>
-              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("json")}>Export as JSON</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("csv")}>Export as CSV</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus size={16} className="mr-2" />
+                Create Promo Code
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Create Promo Code</DialogTitle>
+                <DialogDescription>
+                  Add a new promo code to the system.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="code" className="text-right">
+                    Code
+                  </Label>
+                  <Input
+                    type="text"
+                    id="code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="discount" className="text-right">
+                    Discount
+                  </Label>
+                  <Input
+                    type="number"
+                    id="discount"
+                    value={discount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "") {
+                        setDiscount("");
+                      } else {
+                        const num = Number(value);
+                        if (!isNaN(num)) {
+                          setDiscount(num);
+                        }
+                      }
+                    }}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="expiresAt" className="text-right">
+                    Expires At
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !expiresAt?.from && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {expiresAt?.from ? (
+                          expiresAt.to ? (
+                            `${format(expiresAt.from, "PPP")} - ${format(
+                              expiresAt.to,
+                              "PPP"
+                            )}`
+                          ) : (
+                            format(expiresAt.from, "PPP")
+                          )
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                      <Calendar
+                        mode="range"
+                        defaultMonth={expiresAt?.from}
+                        selected={expiresAt}
+                        onSelect={setExpiresAt}
+                        disabled={{ before: new Date() }}
+                        numberOfMonths={2}
+                        pagedNavigation
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="usageLimit" className="text-right">
+                    Usage Limit
+                  </Label>
+                  <Input
+                    type="number"
+                    id="usageLimit"
+                    value={usageLimit}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "") {
+                        setUsageLimit("");
+                      } else {
+                        const num = Number(value);
+                        if (!isNaN(num)) {
+                          setUsageLimit(num);
+                        }
+                      }
+                    }}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="secondary" onClick={() => { setOpen(false); clearForm(); }}>
+                  Cancel
+                </Button>
+                <Button type="submit" onClick={handleCreatePromoCode}>Create</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
-
-      <div className="rounded-md border overflow-hidden">
-        <Table>
-          <TableHeader className="bg-gray-50">
-            <TableRow>
-              <TableHead className="w-[50px]">ID</TableHead>
-              <TableHead className="w-[80px]">Image</TableHead>
-              <TableHead>Provider Name</TableHead>
-              <TableHead>Promo Code</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Operations</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredPromoCodes.length === 0 ? (
+      {loading ? (
+        <p>Loading promo codes...</p>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
-                  No promo codes found.
-                </TableCell>
+                <TableHead className="w-[100px]">Code</TableHead>
+                <TableHead>Discount</TableHead>
+                <TableHead>Expires At</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Usage Limit</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredPromoCodes.map((promo) => (
-                <TableRow key={promo.id}>
-                  <TableCell className="font-medium">{promo.id}</TableCell>
-                  <TableCell>
-                    <div className="h-12 w-12 rounded overflow-hidden bg-gray-100">
-                      <img
-                        src="/placeholder.svg"
-                        alt="Promo"
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell>{promo.id.includes("5") ? "amarik" : "Sameera"}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span 
-                        className="font-mono bg-gray-100 px-2 py-1 rounded text-sm cursor-pointer"
-                        onClick={() => copyToClipboard(promo.code)}
+            </TableHeader>
+            <TableBody>
+              {filteredPromoCodes.map((promoCode) => (
+                <TableRow key={promoCode.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center">
+                      {promoCode.code}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyToClipboard(promoCode.code);
+                        }}
                       >
-                        {promo.code}
-                      </span>
-                      <button
-                        className="text-gray-400 hover:text-gray-600"
-                        onClick={() => copyToClipboard(promo.code)}
-                      >
-                        {copiedCode === promo.code ? (
-                          <Check size={16} className="text-green-500" />
-                        ) : (
-                          <Copy size={16} />
+                        <Copy size={16} className="text-gray-500" />
+                        {copiedPromoCode === promoCode.code && isCopied && (
+                          <Check size={12} className="ml-1 text-green-500" />
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </TableCell>
-                  <TableCell>{promo.createdAt}</TableCell>
-                  <TableCell>{promo.expiryDate}</TableCell>
-                  <TableCell>
-                    <button
-                      className={`py-1 px-3 rounded-full text-xs font-medium ${
-                        promo.isActive
-                          ? "bg-green-100 text-green-600"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                      onClick={() => handleToggleStatus(promo.id)}
-                    >
-                      {promo.isActive ? "Active" : "Inactive"}
-                    </button>
-                  </TableCell>
+                  <TableCell>{promoCode.discount}</TableCell>
+                  <TableCell>{format(new Date(promoCode.expires_at), "PPP")}</TableCell>
+                  <TableCell>{promoCode.description}</TableCell>
+                  <TableCell>{promoCode.usage_limit === null ? "Unlimited" : promoCode.usage_limit}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical size={16} />
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => duplicatePromoCode(promo)}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          <span>Duplicate Promocode</span>
+                        <DropdownMenuItem onClick={() => handleOpenEditDialog(promoCode)}>
+                          <Edit size={16} className="mr-2" />
+                          Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditDialog(promo)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Edit</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => openDeleteDialog(promo.id)}
-                          className="text-red-500 focus:text-red-500"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Delete</span>
+                        <DropdownMenuItem onClick={() => handleDeletePromoCode(promoCode.id)}>
+                          <Trash2 size={16} className="mr-2" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-500">
-          Showing {Math.min(1, filteredPromoCodes.length)} to {filteredPromoCodes.length} of {filteredPromoCodes.length} rows
+              ))}
+            </TableBody>
+          </Table>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">Rows per page:</span>
-          <Select defaultValue="10">
-            <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue placeholder="10" />
-            </SelectTrigger>
-            <SelectContent side="top">
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Add Promo Code Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Add Promocode</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="active-status">Status</Label>
-                <div className="text-xs text-gray-500">Activate or deactivate this promo code</div>
-              </div>
-              <Switch 
-                id="active-status"
-                checked={newPromoCode.isActive} 
-                onCheckedChange={(checked) => setNewPromoCode({...newPromoCode, isActive: checked})} 
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Select Provider <span className="text-red-500">*</span></Label>
-                <Select
-                  value="amarik"
-                  onValueChange={(value) => {}}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="amarik">amarik</SelectItem>
-                    <SelectItem value="sameera">Sameera</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Promo Code <span className="text-red-500">*</span></Label>
-                <Input 
-                  placeholder="e.g. SUMMER25"
-                  value={newPromoCode.code}
-                  onChange={(e) => setNewPromoCode({...newPromoCode, code: e.target.value.toUpperCase()})}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start Date <span className="text-red-500">*</span></Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                  <Input 
-                    type="date"
-                    className="pl-10"
-                    value={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>End Date <span className="text-red-500">*</span></Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                  <Input 
-                    type="date"
-                    className="pl-10"
-                    value={newPromoCode.expiryDate}
-                    onChange={(e) => setNewPromoCode({...newPromoCode, expiryDate: e.target.value})}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <Label>Minimum Booking Amount <span className="text-red-500">*</span></Label>
-                  <Info 
-                    size={14} 
-                    className="ml-1 text-gray-400"
-                    title="Minimum order value required to apply this promo code" 
-                  />
-                </div>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                  <Input 
-                    type="number"
-                    className="pl-10"
-                    placeholder="0"
-                    value={newPromoCode.minOrderValue || ""}
-                    onChange={(e) => setNewPromoCode({
-                      ...newPromoCode, 
-                      minOrderValue: e.target.value ? parseInt(e.target.value) : undefined
-                    })}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <Label>No. of Users <span className="text-red-500">*</span></Label>
-                  <Info 
-                    size={14} 
-                    className="ml-1 text-gray-400"
-                    title="Maximum number of times this code can be used" 
-                  />
-                </div>
-                <Input 
-                  type="number"
-                  placeholder="100"
-                  value={newPromoCode.usageLimit || ""}
-                  onChange={(e) => setNewPromoCode({
-                    ...newPromoCode, 
-                    usageLimit: e.target.value ? parseInt(e.target.value) : undefined
-                  })}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Discount <span className="text-red-500">*</span></Label>
-                <Input 
-                  type="number"
-                  placeholder="10"
-                  value={newPromoCode.discount || ""}
-                  onChange={(e) => setNewPromoCode({
-                    ...newPromoCode, 
-                    discount: e.target.value ? parseInt(e.target.value) : 0
-                  })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Discount Type <span className="text-red-500">*</span></Label>
-                <Select
-                  value={newPromoCode.discountType}
-                  onValueChange={(value) => setNewPromoCode({
-                    ...newPromoCode, 
-                    discountType: value as "Percentage" | "Fixed"
-                  })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Percentage">Percentage</SelectItem>
-                    <SelectItem value="Fixed">Fixed Amount</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <Label>Max Discount Amount {newPromoCode.discountType === "Percentage" && <span className="text-red-500">*</span>}</Label>
-                <Info 
-                  size={14} 
-                  className="ml-1 text-gray-400"
-                  title="Maximum discount amount when using percentage" 
-                />
-              </div>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                <Input 
-                  type="number"
-                  className="pl-10"
-                  placeholder="500"
-                  value={newPromoCode.maxDiscount || ""}
-                  onChange={(e) => setNewPromoCode({
-                    ...newPromoCode, 
-                    maxDiscount: e.target.value ? parseInt(e.target.value) : undefined
-                  })}
-                  disabled={newPromoCode.discountType !== "Percentage"}
-                />
-              </div>
-              {newPromoCode.discountType === "Percentage" && !newPromoCode.maxDiscount && (
-                <p className="text-xs text-amber-500 flex items-center">
-                  <AlertCircle size={14} className="mr-1" />
-                  Setting a maximum discount is recommended for percentage discounts
-                </p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Message</Label>
-              <Textarea 
-                placeholder="Description or terms for this promocode"
-                value={newPromoCode.description || ""}
-                onChange={(e) => setNewPromoCode({...newPromoCode, description: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Image <span className="text-red-500">*</span></Label>
-              <div 
-                className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50"
-                onClick={() => document.getElementById('promoImageInput')?.click()}
-              >
-                <div className="py-6">
-                  <div className="flex justify-center mb-2">
-                    <Upload className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-500">Drag & Drop your files or Browse</p>
-                </div>
-                <input 
-                  type="file"
-                  id="promoImageInput"
-                  accept="image/*"
-                  className="hidden"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Repeat Usage</Label>
-                <Switch defaultChecked={false} />
-              </div>
-              <p className="text-xs text-gray-500">Allow users to use this promo code multiple times</p>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddPromoCode}>
-              Add Promocode
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Promo Code Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Promocode</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {/* Same form fields as add dialog but filled with existing data */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="edit-active-status">Status</Label>
-                <div className="text-xs text-gray-500">Activate or deactivate this promo code</div>
-              </div>
-              <Switch 
-                id="edit-active-status"
-                checked={newPromoCode.isActive} 
-                onCheckedChange={(checked) => setNewPromoCode({...newPromoCode, isActive: checked})} 
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Provider</Label>
-                <Input value={editingCode?.id.includes("5") ? "amarik" : "Sameera"} disabled />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Promo Code <span className="text-red-500">*</span></Label>
-                <Input 
-                  value={newPromoCode.code}
-                  onChange={(e) => setNewPromoCode({...newPromoCode, code: e.target.value.toUpperCase()})}
-                />
-              </div>
-            </div>
-            
-            {/* And so on for the rest of the form fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>End Date <span className="text-red-500">*</span></Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                  <Input 
-                    type="date"
-                    className="pl-10"
-                    value={newPromoCode.expiryDate}
-                    onChange={(e) => setNewPromoCode({...newPromoCode, expiryDate: e.target.value})}
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <Label>No. of Users <span className="text-red-500">*</span></Label>
-                  <Info 
-                    size={14} 
-                    className="ml-1 text-gray-400"
-                    title="Maximum number of times this code can be used" 
-                  />
-                </div>
-                <Input 
-                  type="number"
-                  value={newPromoCode.usageLimit || ""}
-                  onChange={(e) => setNewPromoCode({
-                    ...newPromoCode, 
-                    usageLimit: e.target.value ? parseInt(e.target.value) : undefined
-                  })}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Discount <span className="text-red-500">*</span></Label>
-                <Input 
-                  type="number"
-                  value={newPromoCode.discount || ""}
-                  onChange={(e) => setNewPromoCode({
-                    ...newPromoCode, 
-                    discount: e.target.value ? parseInt(e.target.value) : 0
-                  })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Discount Type <span className="text-red-500">*</span></Label>
-                <Select
-                  value={newPromoCode.discountType}
-                  onValueChange={(value) => setNewPromoCode({
-                    ...newPromoCode, 
-                    discountType: value as "Percentage" | "Fixed"
-                  })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Percentage">Percentage</SelectItem>
-                    <SelectItem value="Fixed">Fixed Amount</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <Label>Max Discount Amount {newPromoCode.discountType === "Percentage" && <span className="text-red-500">*</span>}</Label>
-                <Info 
-                  size={14} 
-                  className="ml-1 text-gray-400"
-                  title="Maximum discount amount when using percentage" 
-                />
-              </div>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                <Input 
-                  type="number"
-                  className="pl-10"
-                  placeholder="500"
-                  value={newPromoCode.maxDiscount || ""}
-                  onChange={(e) => setNewPromoCode({
-                    ...newPromoCode, 
-                    maxDiscount: e.target.value ? parseInt(e.target.value) : undefined
-                  })}
-                  disabled={newPromoCode.discountType !== "Percentage"}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Message</Label>
-              <Textarea 
-                value={newPromoCode.description || ""}
-                onChange={(e) => setNewPromoCode({...newPromoCode, description: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Usage Statistics</Label>
-              <Card>
-                <CardContent className="pt-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Times Used:</span>
-                    <span className="font-medium">{editingCode?.usageCount || 0}</span>
-                  </div>
-                  <div className="flex justify-between text-sm mt-1">
-                    <span className="text-gray-500">Usage Limit:</span>
-                    <span className="font-medium">{newPromoCode.usageLimit || 100}</span>
-                  </div>
-                  <div className="mt-2">
-                    <div className="bg-gray-200 h-2 rounded-full w-full">
-                      <div 
-                        className={cn(
-                          "h-2 rounded-full bg-primary",
-                          editingCode && newPromoCode.usageLimit && 
-                          (editingCode.usageCount / newPromoCode.usageLimit > 0.8) 
-                            ? "bg-red-500" 
-                            : (editingCode.usageCount / newPromoCode.usageLimit > 0.5) 
-                              ? "bg-yellow-500" 
-                              : "bg-green-500"
-                        )} 
-                        style={{ 
-                          width: `${editingCode && newPromoCode.usageLimit ? 
-                            Math.min(100, (editingCode.usageCount / newPromoCode.usageLimit) * 100) : 0}%` 
-                        }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-right mt-1 text-gray-500">
-                      {editingCode && newPromoCode.usageLimit ? 
-                        Math.round((editingCode.usageCount / newPromoCode.usageLimit) * 100) : 0}% used
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditPromoCode}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      )}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Promocode</DialogTitle>
+            <DialogTitle>Edit Promo Code</DialogTitle>
+            <DialogDescription>
+              Edit the promo code details.
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <p>Are you sure you want to delete this promocode? This action cannot be undone.</p>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="code" className="text-right">
+                Code
+              </Label>
+              <Input
+                type="text"
+                id="code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="discount" className="text-right">
+                Discount
+              </Label>
+              <Input
+                type="number"
+                id="discount"
+                value={discount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "") {
+                    setDiscount("");
+                  } else {
+                    const num = Number(value);
+                    if (!isNaN(num)) {
+                      setDiscount(num);
+                    }
+                  }
+                }}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="expiresAt" className="text-right">
+                Expires At
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiresAt?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiresAt?.from ? (
+                      expiresAt.to ? (
+                        `${format(expiresAt.from, "PPP")} - ${format(
+                          expiresAt.to,
+                          "PPP"
+                        )}`
+                      ) : (
+                        format(expiresAt.from, "PPP")
+                      )
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                  <Calendar
+                    mode="range"
+                    defaultMonth={expiresAt?.from}
+                    selected={expiresAt}
+                    onSelect={setExpiresAt}
+                    disabled={{ before: new Date() }}
+                    numberOfMonths={2}
+                    pagedNavigation
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="usageLimit" className="text-right">
+                Usage Limit
+              </Label>
+              <Input
+                type="number"
+                id="usageLimit"
+                value={usageLimit}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "") {
+                    setUsageLimit("");
+                  } else {
+                    const num = Number(value);
+                    if (!isNaN(num)) {
+                      setUsageLimit(num);
+                    }
+                  }
+                }}
+                className="col-span-3"
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeletePromoCode}>Delete</Button>
+            <Button type="button" variant="secondary" onClick={() => { setEditOpen(false); clearForm(); }}>
+              Cancel
+            </Button>
+            <Button type="submit" onClick={handleEditPromoCode}>Update</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
+
+export default PromoCodes;

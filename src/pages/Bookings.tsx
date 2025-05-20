@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingList } from "@/components/bookings/BookingList";
@@ -38,15 +37,12 @@ export default function Bookings() {
   };
 
   const handleFilterChange = (
-    dates: { from: Date | undefined, to: Date | undefined },
-    service: string,
-    payment: string,
-    loc: string
+    filters: { dateRange: { from: Date | undefined, to: Date | undefined }, serviceType: string, paymentMode: string, location: string }
   ) => {
-    setDateRange(dates);
-    setServiceType(service);
-    setPaymentMode(payment);
-    setLocation(loc);
+    setDateRange(filters.dateRange);
+    setServiceType(filters.serviceType);
+    setPaymentMode(filters.paymentMode);
+    setLocation(filters.location);
   };
 
   const handleSearch = (query: string) => {

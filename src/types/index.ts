@@ -1,4 +1,3 @@
-
 export type ServiceType = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
 export type WorkerStatus = "Pending" | "Active" | "Inactive" | "Rejected";
 export type Gender = "Male" | "Female" | "Other";
@@ -99,6 +98,7 @@ export interface Notification {
   method?: NotificationMethod;
   scheduled?: string;
   attachmentUrl?: string;
+  notification_method?: string; // Add this field
 }
 
 export interface CategoryStat {
@@ -185,4 +185,20 @@ export interface Slider {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BookingFilters {
+  dateRange: { from: string, to: string };
+  serviceType: ServiceType;
+  paymentMode: PaymentMode;
+  location: string;
+  searchQuery: string;
+}
+
+export interface BookingListProps {
+  dateRange: { from: string, to: string };
+  serviceType: ServiceType;
+  paymentMode: PaymentMode;
+  location: string;
+  searchQuery: string;
 }
