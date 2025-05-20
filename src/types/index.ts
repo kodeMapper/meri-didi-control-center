@@ -1,3 +1,4 @@
+
 export type ServiceType = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
 export type WorkerStatus = "Pending" | "Active" | "Inactive" | "Rejected";
 export type Gender = "Male" | "Female" | "Other";
@@ -8,6 +9,8 @@ export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 export type NotificationType = "New Worker Application" | "Worker Verified" | "New Booking" | "Booking Completed" | "Payment Received" | "Booking Cancelled" | "General Announcement" | "Special Offer";
 export type UserType = "admin" | "worker" | "customer";
 export type ServiceCategory = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
+export type PaymentMode = "Cash" | "Online" | "Card" | "UPI";
+export type NotificationMethod = "Email" | "SMS" | "In-App" | "All";
 
 export interface Worker {
   id: string;
@@ -79,6 +82,8 @@ export interface Booking {
   createdAt: string;
   updatedAt: string;
   deletionReason?: string;
+  paymentMode?: PaymentMode;
+  paymentStatus?: string;
 }
 
 export interface Notification {
@@ -91,6 +96,9 @@ export interface Notification {
   user_type?: UserType;
   user_identifier?: string; // Adding this field to match usage in code
   recipients?: string; // 'all', 'workers', 'customers', or specific IDs
+  method?: NotificationMethod;
+  scheduled?: string;
+  attachmentUrl?: string;
 }
 
 export interface CategoryStat {
@@ -111,4 +119,70 @@ export interface Stats {
     pendingApprovals: number;
     bookings: number;
   };
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: City;
+  joiningDate: string;
+  status: "Active" | "Inactive";
+  totalBookings: number;
+  subscriptionPlan: string;
+  lastActivity: string;
+}
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  discount: number;
+  discountType: "Percentage" | "Fixed";
+  maxDiscount?: number;
+  minOrderValue?: number;
+  expiryDate: string;
+  usageLimit: number;
+  usageCount: number;
+  isActive: boolean;
+  createdAt: string;
+  description?: string;
+}
+
+export interface Subscription {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: number;
+  durationType: "Days" | "Months" | "Years";
+  features: string[];
+  isActive: boolean;
+  subscribersCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Slider {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl: string;
+  linkUrl?: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
