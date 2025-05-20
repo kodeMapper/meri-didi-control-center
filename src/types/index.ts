@@ -8,6 +8,7 @@ export type IDType = "Aadhar Card" | "PAN Card" | "Driving License" | "Voter ID"
 export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 export type NotificationType = "New Worker Application" | "Worker Verified" | "New Booking" | "Booking Completed" | "Payment Received" | "Booking Cancelled" | "General Announcement" | "Special Offer";
 export type UserType = "admin" | "worker" | "customer";
+export type ServiceCategory = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
 
 export interface Worker {
   id: string;
@@ -45,6 +46,16 @@ export interface ServicePricing {
   price: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ServicePlan {
+  id: string;
+  planName: string;
+  description: string;
+  category: ServiceCategory;
+  frequency: string;
+  persons: number;
+  basePrice: number;
 }
 
 export interface Booking {

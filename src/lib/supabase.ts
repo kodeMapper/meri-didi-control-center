@@ -1,176 +1,215 @@
 
-// Import the properly configured supabase client
-import { supabase as configuredSupabase } from '@/integrations/supabase/client';
-import { 
+import { supabase } from "@/integrations/supabase/client";
+import type { 
+  Worker, 
   Booking, 
-  BookingStatus, 
-  ServiceType, 
-  Notification, 
+  ServicePricing, 
+  WorkerStatus,
+  Notification,
   NotificationType,
-  UserType
-} from '@/types';
+  UserType,
+} from "@/types";
+import { v4 as uuidv4 } from "uuid";
 
-// Export the configured client
-export const supabase = configuredSupabase;
+/**
+ * Worker Applications Management
+ */
 
-// Helper to check Supabase connection
-export function checkSupabaseConnection() {
-  return true; // We know our client is configured correctly now
-}
-
-// Helper function for worker applications
-export type WorkerApplication = {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  gender: string;
-  date_of_birth: string;
-  service_type: string;
-  experience: number;
-  availability: string;
-  id_type: string;
-  id_number: string;
-  about: string;
-  id_proof_url: string | null;
-  photo_url: string | null;
-  status: string;
-  skills: string[];
-  rating: number;
-  total_bookings: number;
-  completion_rate: number;
-  created_at: string;
-  updated_at: string;
-}
-
-// Type-safe helper for worker applications
-export async function getWorkerApplications(status?: string) {
+// Function to get worker applications by status
+export async function getWorkerApplications(status?: WorkerStatus) {
   try {
     let query = supabase
-      .from('worker_applications')
-      .select('*');
-      
+      .from("worker_applications")
+      .select("*");
+    
     if (status) {
-      query = query.eq('status', status);
+      query = query.eq("status", status);
     }
     
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query;
     
     if (error) {
       console.error("Error fetching worker applications:", error);
       return [];
     }
     
-    return data as WorkerApplication[];
+    return data;
   } catch (error) {
-    console.error("Exception fetching worker applications:", error);
+    console.error("Error in getWorkerApplications:", error);
     return [];
   }
 }
 
-// Helper for fetching booking data with proper mapping
-export async function getRecentBookings(limit = 5) {
+// Function to map worker application data to Worker type
+export function mapWorkerApplicationToWorker(application: any): Worker {
+  return {
+    id: application.id || "",
+    fullName: application.full_name || "",
+    email: application.email || "",
+    phone: application.phone || "",
+    address: application.address || "",
+    city: application.city || "Mumbai",
+    gender: application.gender || "Male",
+    dateOfBirth: application.date_of_birth || "",
+    serviceType: application.service_type || "Cleaning",
+    experience: application.experience || 0,
+    availability: application.availability || "Full-Time",
+    idType: application.id_type || "Aadhar Card",
+    idNumber: application.id_number || "",
+    about: application.about || "",
+    skills: application.skills || [],
+    status: application.status || "Pending",
+    rating: application.rating || 0,
+    totalBookings: application.total_bookings || 0,
+    completionRate: application.completion_rate || 0,
+    joiningDate: application.joining_date || "",
+    createdAt: application.created_at || new Date().toISOString(),
+    updatedAt: application.updated_at || new Date().toISOString(),
+    idProofUrl: application.id_proof_url || null,
+    photoUrl: application.photo_url || null,
+  };
+}
+
+// Update worker application status
+export async function updateWorkerApplicationStatus(id: string, status: WorkerStatus): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from("worker_applications")
+      .update({ status })
+      .eq("id", id);
+    
+    if (error) {
+      console.error("Error updating worker application status:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in updateWorkerApplicationStatus:", error);
+    return false;
+  }
+}
+
+// Delete worker application
+export async function deleteWorkerApplication(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from("worker_applications")
+      .delete()
+      .eq("id", id);
+    
+    if (error) {
+      console.error("Error deleting worker application:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in deleteWorkerApplication:", error);
+    return false;
+  }
+}
+
+/**
+ * Bookings Management
+ */
+
+// Get recent bookings
+export async function getRecentBookings(limit: number = 5): Promise<Booking[]> {
   try {
     const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .from("bookings")
+      .select("*")
+      .order("created_at", { ascending: false })
       .limit(limit);
-      
+    
     if (error) {
-      console.error("Error fetching bookings:", error);
+      console.error("Error fetching recent bookings:", error);
       return [];
     }
     
-    // Map Supabase booking format to our application's Booking format
-    return data.map(booking => ({
+    return data.map((booking: any) => ({
       id: booking.id,
-      customerId: booking.id, // Placeholder as we don't have this field
+      customerId: booking.customer_id || "",
       customerName: booking.customer_name || "Unknown",
-      customerEmail: booking.customer_email || "No email",
-      customerPhone: "N/A", // Not in the current schema
-      customerAddress: "N/A", // Not in the current schema
+      customerEmail: booking.customer_email || "",
+      customerPhone: booking.customer_phone || "",
+      customerAddress: booking.customer_address || "",
       workerId: booking.worker_id || "",
-      workerName: "Assigned Worker", // We'll need to fetch this separately
-      serviceType: booking.service_type as ServiceType,
-      serviceName: booking.service_type || "Unknown Service",
-      serviceDuration: 2, // Default value since we don't have this field
-      serviceDate: booking.booking_date ? new Date(booking.booking_date).toLocaleDateString() : "N/A",
-      serviceTime: booking.booking_date ? new Date(booking.booking_date).toLocaleTimeString() : "N/A",
+      workerName: booking.worker_name || "Unassigned",
+      serviceType: booking.service_type || "Cleaning",
+      serviceName: booking.service_name || "",
+      serviceDuration: booking.service_duration || 1,
+      serviceDate: booking.service_date || "",
+      serviceTime: booking.service_time || "",
       amount: booking.amount || 0,
-      status: booking.status as BookingStatus || "Pending",
-      notes: "",
-      feedback: booking.feedback || "", // Using the new field
-      rating: booking.rating || 0, // Using the new field
+      status: booking.status || "Pending",
+      notes: booking.notes || "",
+      feedback: booking.feedback || "",
+      rating: booking.rating || 0,
       createdAt: booking.created_at,
       updatedAt: booking.updated_at,
-      deletionReason: booking.deletion_reason
-    })) as Booking[];
+      deletionReason: booking.deletion_reason || ""
+    }));
   } catch (error) {
-    console.error("Exception fetching bookings:", error);
+    console.error("Error in getRecentBookings:", error);
     return [];
   }
 }
 
-// Helper for fetching completed bookings
-export async function getCompletedBookings() {
+// Get completed bookings
+export async function getCompletedBookings(): Promise<Booking[]> {
   try {
     const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('status', 'Completed')
-      .order('created_at', { ascending: false });
-      
+      .from("bookings")
+      .select("*")
+      .eq("status", "Completed")
+      .order("created_at", { ascending: false });
+    
     if (error) {
       console.error("Error fetching completed bookings:", error);
       return [];
     }
     
-    // Map Supabase booking format to our application's Booking format
-    return data.map(booking => ({
+    return data.map((booking: any) => ({
       id: booking.id,
-      customerId: booking.id, // Placeholder as we don't have this field
+      customerId: booking.customer_id || "",
       customerName: booking.customer_name || "Unknown",
-      customerEmail: booking.customer_email || "No email",
-      customerPhone: "N/A", // Not in the current schema
-      customerAddress: "N/A", // Not in the current schema
+      customerEmail: booking.customer_email || "",
+      customerPhone: booking.customer_phone || "",
+      customerAddress: booking.customer_address || "",
       workerId: booking.worker_id || "",
-      workerName: "Assigned Worker", // We'll need to fetch this separately
-      serviceType: booking.service_type as ServiceType,
-      serviceName: booking.service_type || "Unknown Service",
-      serviceDuration: 2, // Default value since we don't have this field
-      serviceDate: booking.booking_date ? new Date(booking.booking_date).toLocaleDateString() : "N/A",
-      serviceTime: booking.booking_date ? new Date(booking.booking_date).toLocaleTimeString() : "N/A",
+      workerName: booking.worker_name || "Unassigned",
+      serviceType: booking.service_type || "Cleaning",
+      serviceName: booking.service_name || "",
+      serviceDuration: booking.service_duration || 1,
+      serviceDate: booking.service_date || "",
+      serviceTime: booking.service_time || "",
       amount: booking.amount || 0,
-      status: "Completed" as BookingStatus,
-      notes: "",
-      feedback: booking.feedback || "", // Using the new field
-      rating: booking.rating || 0, // Using the new field
+      status: booking.status || "Completed",
+      notes: booking.notes || "",
+      feedback: booking.feedback || "",
+      rating: booking.rating || 0,
       createdAt: booking.created_at,
       updatedAt: booking.updated_at,
-      deletionReason: booking.deletion_reason
-    })) as Booking[];
+      deletionReason: booking.deletion_reason || ""
+    }));
   } catch (error) {
-    console.error("Exception fetching completed bookings:", error);
+    console.error("Error in getCompletedBookings:", error);
     return [];
   }
 }
 
-// Helper to delete a booking
-export async function deleteBooking(bookingId: string, reason?: string) {
+// Delete booking
+export async function deleteBooking(id: string, reason: string): Promise<boolean> {
   try {
-    // In a real implementation, you might want to update the status to 'Cancelled'
-    // instead of deleting the record, and store the reason
     const { error } = await supabase
-      .from('bookings')
+      .from("bookings")
       .update({ 
-        status: 'Cancelled', 
-        deletion_reason: reason || 'No reason provided',
-        updated_at: new Date().toISOString()
+        status: "Cancelled", 
+        deletion_reason: reason 
       })
-      .eq('id', bookingId);
+      .eq("id", id);
     
     if (error) {
       console.error("Error deleting booking:", error);
@@ -179,102 +218,35 @@ export async function deleteBooking(bookingId: string, reason?: string) {
     
     return true;
   } catch (error) {
-    console.error("Exception deleting booking:", error);
+    console.error("Error in deleteBooking:", error);
     return false;
   }
 }
 
-// Helper to convert WorkerApplication to Worker type
-export function mapWorkerApplicationToWorker(app: WorkerApplication) {
-  return {
-    id: app.id,
-    fullName: app.full_name,
-    email: app.email,
-    phone: app.phone,
-    address: app.address,
-    city: app.city as any,
-    gender: app.gender as any,
-    dateOfBirth: app.date_of_birth,
-    serviceType: app.service_type as any,
-    experience: app.experience,
-    availability: app.availability as any,
-    idType: app.id_type as any,
-    idNumber: app.id_number,
-    about: app.about,
-    skills: app.skills || [],
-    status: app.status as any,
-    rating: app.rating,
-    totalBookings: app.total_bookings,
-    completionRate: app.completion_rate,
-    createdAt: app.created_at,
-    updatedAt: app.updated_at,
-    idProofUrl: app.id_proof_url,
-    photoUrl: app.photo_url,
-    joiningDate: app.created_at
-  };
-}
+/**
+ * Notification Management
+ */
 
-// Helper to get worker applications as Worker[] type
-export async function getWorkersFromApplications(status?: string) {
-  const applications = await getWorkerApplications(status);
-  return applications.map(app => mapWorkerApplicationToWorker(app));
-}
-
-// Helper to update worker application status
-export async function updateWorkerApplicationStatus(id: string, status: string) {
+// Add notification
+export async function addNotification(notification: {
+  type: NotificationType;
+  message: string;
+  title?: string;
+  read: boolean;
+  user_type?: UserType;
+  recipients?: string;
+}): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('worker_applications')
-      .update({ 
-        status, 
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', id);
-    
-    if (error) {
-      console.error("Error updating worker status:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Exception updating worker status:", error);
-    return false;
-  }
-}
-
-// Helper to delete worker application
-export async function deleteWorkerApplication(id: string) {
-  try {
-    const { error } = await supabase
-      .from('worker_applications')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error("Error deleting worker:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Exception deleting worker:", error);
-    return false;
-  }
-}
-
-// Helper to add a notification
-export async function addNotification(notification: Omit<Notification, 'id' | 'createdAt'>) {
-  try {
-    const { error } = await supabase
-      .from('notifications')
+    const { data, error } = await supabase
+      .from("notifications")
       .insert({
         type: notification.type,
         message: notification.message,
         title: notification.title || null,
-        read: false,
+        read: notification.read || false,
         user_type: notification.user_type || null,
-        user_identifier: notification.user_identifier || null,
+        user_identifier: null,
+        recipients: notification.recipients || null,
         created_at: new Date().toISOString()
       });
     
@@ -285,48 +257,48 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'c
     
     return true;
   } catch (error) {
-    console.error("Exception adding notification:", error);
+    console.error("Error in addNotification:", error);
     return false;
   }
 }
 
-// Helper to get notifications
-export async function getNotifications() {
+// Get all notifications
+export async function getNotifications(): Promise<Notification[]> {
   try {
     const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false });
     
     if (error) {
       console.error("Error fetching notifications:", error);
       return [];
     }
     
-    return data.map(notification => ({
+    return data.map((notification: any) => ({
       id: notification.id,
-      type: notification.type as NotificationType,
+      type: notification.type,
       message: notification.message,
-      title: notification.title || undefined,
+      title: notification.title || "",
       read: notification.read,
       createdAt: notification.created_at,
-      user_type: notification.user_type as UserType | undefined,
+      user_type: notification.user_type,
       user_identifier: notification.user_identifier,
       recipients: notification.recipients
-    })) as Notification[];
+    }));
   } catch (error) {
-    console.error("Exception fetching notifications:", error);
+    console.error("Error in getNotifications:", error);
     return [];
   }
 }
 
-// Helper to mark a notification as read
-export async function markNotificationAsRead(id: string) {
+// Mark notification as read
+export async function markNotificationAsRead(id: string): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('notifications')
+      .from("notifications")
       .update({ read: true })
-      .eq('id', id);
+      .eq("id", id);
     
     if (error) {
       console.error("Error marking notification as read:", error);
@@ -335,18 +307,18 @@ export async function markNotificationAsRead(id: string) {
     
     return true;
   } catch (error) {
-    console.error("Exception marking notification as read:", error);
+    console.error("Error in markNotificationAsRead:", error);
     return false;
   }
 }
 
-// Helper to mark all notifications as read
-export async function markAllNotificationsAsRead() {
+// Mark all notifications as read
+export async function markAllNotificationsAsRead(): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from('notifications')
+      .from("notifications")
       .update({ read: true })
-      .eq('read', false);
+      .eq("read", false);
     
     if (error) {
       console.error("Error marking all notifications as read:", error);
@@ -355,7 +327,27 @@ export async function markAllNotificationsAsRead() {
     
     return true;
   } catch (error) {
-    console.error("Exception marking all notifications as read:", error);
+    console.error("Error in markAllNotificationsAsRead:", error);
     return false;
+  }
+}
+
+// Get unread notifications count
+export async function getUnreadNotificationsCount(): Promise<number> {
+  try {
+    const { data, error, count } = await supabase
+      .from("notifications")
+      .select("*", { count: "exact" })
+      .eq("read", false);
+    
+    if (error) {
+      console.error("Error getting unread notifications count:", error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error("Error in getUnreadNotificationsCount:", error);
+    return 0;
   }
 }
