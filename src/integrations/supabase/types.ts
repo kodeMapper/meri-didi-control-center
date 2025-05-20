@@ -16,6 +16,7 @@ export type Database = {
           created_at: string
           customer_email: string
           customer_name: string
+          deletion_reason: string | null
           feedback: string | null
           id: string
           rating: number | null
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           customer_email: string
           customer_name: string
+          deletion_reason?: string | null
           feedback?: string | null
           id?: string
           rating?: number | null
@@ -44,6 +46,7 @@ export type Database = {
           created_at?: string
           customer_email?: string
           customer_name?: string
+          deletion_reason?: string | null
           feedback?: string | null
           id?: string
           rating?: number | null
@@ -68,6 +71,8 @@ export type Database = {
           id: string
           message: string
           read: boolean | null
+          recipients: string | null
+          title: string | null
           type: string
           user_identifier: string | null
           user_type: string | null
@@ -77,6 +82,8 @@ export type Database = {
           id?: string
           message: string
           read?: boolean | null
+          recipients?: string | null
+          title?: string | null
           type: string
           user_identifier?: string | null
           user_type?: string | null
@@ -86,6 +93,8 @@ export type Database = {
           id?: string
           message?: string
           read?: boolean | null
+          recipients?: string | null
+          title?: string | null
           type?: string
           user_identifier?: string | null
           user_type?: string | null

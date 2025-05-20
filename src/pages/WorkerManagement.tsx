@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Worker, ServiceType } from "@/types";
 import { WorkerService } from "@/services/mockDatabase";
@@ -41,7 +40,8 @@ import {
 } from "@/components/ui/dialog";
 import { 
   supabase, 
-  getWorkersFromApplications, 
+  getWorkerApplications,
+  getWorkersFromApplications,
   updateWorkerApplicationStatus,
   deleteWorkerApplication,
   addNotification

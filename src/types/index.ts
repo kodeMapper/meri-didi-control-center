@@ -1,4 +1,3 @@
-
 export type ServiceType = "Cleaning" | "Cooking" | "Driving" | "Sweeping" | "Landscaping";
 export type WorkerStatus = "Pending" | "Active" | "Inactive" | "Rejected";
 export type Gender = "Male" | "Female" | "Other";
@@ -90,7 +89,7 @@ export interface Notification {
   read: boolean;
   createdAt: string;
   user_type?: UserType;
-  user_identifier?: string;
+  user_identifier?: string; // Adding this field to match usage in code
   recipients?: string; // 'all', 'workers', 'customers', or specific IDs
 }
 

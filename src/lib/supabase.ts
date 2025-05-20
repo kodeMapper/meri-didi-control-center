@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { 
   Worker, 
@@ -36,6 +35,17 @@ export async function getWorkerApplications(status?: WorkerStatus) {
     return data;
   } catch (error) {
     console.error("Error in getWorkerApplications:", error);
+    return [];
+  }
+}
+
+// Added function to get workers from applications with a specific status
+export async function getWorkersFromApplications(status?: WorkerStatus) {
+  try {
+    const applications = await getWorkerApplications(status);
+    return applications.map(app => mapWorkerApplicationToWorker(app));
+  } catch (error) {
+    console.error("Error in getWorkersFromApplications:", error);
     return [];
   }
 }
@@ -234,6 +244,7 @@ export async function addNotification(notification: {
   title?: string;
   read: boolean;
   user_type?: UserType;
+  user_identifier?: string;
   recipients?: string;
 }): Promise<boolean> {
   try {
@@ -245,7 +256,7 @@ export async function addNotification(notification: {
         title: notification.title || null,
         read: notification.read || false,
         user_type: notification.user_type || null,
-        user_identifier: null,
+        user_identifier: notification.user_identifier || null,
         recipients: notification.recipients || null,
         created_at: new Date().toISOString()
       });
@@ -351,3 +362,6 @@ export async function getUnreadNotificationsCount(): Promise<number> {
     return 0;
   }
 }
+
+// Export the supabase client directly so it can be used elsewhere
+export { supabase };

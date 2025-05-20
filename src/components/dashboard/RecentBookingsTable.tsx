@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Table, 
@@ -60,8 +59,8 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
     if (!selectedBooking) return;
     
     try {
-      // Delete booking from database
-      const success = await deleteBooking(selectedBooking.id);
+      // Delete booking from database, now passing both id and reason
+      const success = await deleteBooking(selectedBooking.id, deletionReason);
       
       if (success) {
         // Send notification to worker
