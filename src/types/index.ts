@@ -93,12 +93,12 @@ export interface Notification {
   read: boolean;
   createdAt: string;
   user_type?: UserType;
-  user_identifier?: string; // Adding this field to match usage in code
-  recipients?: string; // 'all', 'workers', 'customers', or specific IDs
+  user_identifier?: string;
+  recipients?: string;
   method?: NotificationMethod;
   scheduled?: string;
   attachmentUrl?: string;
-  notification_method?: string; // Add this field
+  notification_method?: string;
 }
 
 export interface CategoryStat {
@@ -189,16 +189,18 @@ export interface Slider {
 
 export interface BookingFilters {
   dateRange: { from: string, to: string };
-  serviceType: ServiceType;
-  paymentMode: PaymentMode;
+  serviceType: string;
+  paymentMode: string;
   location: string;
   searchQuery: string;
 }
 
-export interface BookingListProps {
-  dateRange: { from: string, to: string };
-  serviceType: ServiceType;
-  paymentMode: PaymentMode;
-  location: string;
-  searchQuery: string;
+export interface GalleryItem {
+  id: string;
+  title: string;
+  category: string;
+  imageUrl: string;
+  createdAt: string;
+  order: number;
+  isActive: boolean;
 }

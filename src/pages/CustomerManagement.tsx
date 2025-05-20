@@ -1,311 +1,162 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Filter, Search, Download, MoreVertical, Edit, Trash2, UserPlus, Mail, MessageSquare, RefreshCw, Check } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Customer, City } from "@/types";
+import { Search, Filter, Download, MoreVertical, Edit, Trash2, Eye, Ban, UserPlus, RefreshCw, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Sample customers data
-const initialCustomers: Customer[] = [
-  {
-    id: "cust-001",
-    name: "Rahul Sharma",
-    email: "rahul.sharma@example.com",
-    phone: "+91 9876543210",
-    address: "123 Main Street, Mumbai",
-    city: "Mumbai",
-    joiningDate: "2024-12-05",
-    status: "Active",
-    totalBookings: 15,
-    subscriptionPlan: "Standard",
-    lastActivity: "2025-05-15"
-  },
-  {
-    id: "cust-002",
-    name: "Priya Patel",
-    email: "priya.patel@example.com",
-    phone: "+91 9876543211",
-    address: "456 Park Avenue, Delhi",
-    city: "Delhi",
-    joiningDate: "2024-11-15",
-    status: "Active",
-    totalBookings: 8,
-    subscriptionPlan: "Premium",
-    lastActivity: "2025-05-18"
-  },
-  {
-    id: "cust-003",
-    name: "Amit Kumar",
-    email: "amit.kumar@example.com",
-    phone: "+91 9876543212",
-    address: "789 Garden Road, Bangalore",
-    city: "Bangalore",
-    joiningDate: "2025-01-20",
-    status: "Active",
-    totalBookings: 3,
-    subscriptionPlan: "Basic",
-    lastActivity: "2025-05-10"
-  },
-  {
-    id: "cust-004",
-    name: "Sneha Gupta",
-    email: "sneha.gupta@example.com",
-    phone: "+91 9876543213",
-    address: "101 Hill View, Chennai",
-    city: "Chennai",
-    joiningDate: "2025-02-10",
-    status: "Inactive",
-    totalBookings: 1,
-    subscriptionPlan: "Trial",
-    lastActivity: "2025-03-05"
-  },
-  {
-    id: "cust-005",
-    name: "Vikram Singh",
-    email: "vikram.singh@example.com",
-    phone: "+91 9876543214",
-    address: "202 Lake View, Kolkata",
-    city: "Kolkata",
-    joiningDate: "2024-12-20",
-    status: "Active",
-    totalBookings: 12,
-    subscriptionPlan: "Premium",
-    lastActivity: "2025-05-17"
-  },
-  {
-    id: "cust-006",
-    name: "Meera Reddy",
-    email: "meera.reddy@example.com",
-    phone: "+91 9876543215",
-    address: "303 Ocean Front, Hyderabad",
-    city: "Hyderabad",
-    joiningDate: "2025-03-01",
-    status: "Inactive",
-    totalBookings: 0,
-    subscriptionPlan: "Basic",
-    lastActivity: "2025-03-01"
-  }
-];
+const generateMockCustomers = (): Customer[] => {
+  const cities: City[] = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad"];
+  const plans = ["Basic", "Premium", "Gold", "Silver", "Free"];
+  const statuses: ("Active" | "Inactive")[] = ["Active", "Inactive"];
+  
+  return Array.from({ length: 50 }, (_, i) => ({
+    id: `cust-${i + 1}`,
+    name: `Customer ${i + 1}`,
+    email: `customer${i + 1}@example.com`,
+    phone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+    address: `${Math.floor(Math.random() * 100) + 1}, Street ${Math.floor(Math.random() * 100) + 1}`,
+    city: cities[Math.floor(Math.random() * cities.length)],
+    joiningDate: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString().split('T')[0],
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    totalBookings: Math.floor(Math.random() * 100),
+    subscriptionPlan: plans[Math.floor(Math.random() * plans.length)],
+    lastActivity: new Date(Date.now() - Math.floor(Math.random() * 1000000000)).toISOString().split('T')[0],
+  }));
+};
 
 export default function CustomerManagement() {
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
+  const [customers] = useState<Customer[]>(generateMockCustomers());
   const [searchQuery, setSearchQuery] = useState("");
-  const [cityFilter, setCityFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [subscriptionFilter, setSubscriptionFilter] = useState<string>("all");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedPlan, setSelectedPlan] = useState<string>("all");
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof Customer;
-    direction: 'ascending' | 'descending';
-  } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const { toast } = useToast();
+  const [isBulkActionMenuOpen, setIsBulkActionMenuOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Filter customers based on search and filters
-  const filteredCustomers = customers
-    .filter(customer => {
+  const filterCustomers = () => {
+    return customers.filter(customer => {
       const matchesSearch = 
-        !searchQuery ||
         customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.phone.includes(searchQuery);
+        customer.phone.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesCity = cityFilter === "all" || customer.city === cityFilter;
-      const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
-      const matchesSubscription = subscriptionFilter === "all" || customer.subscriptionPlan === subscriptionFilter;
+      const matchesCity = selectedCity === "all" || customer.city === selectedCity;
+      const matchesStatus = selectedStatus === "all" || customer.status === selectedStatus;
+      const matchesPlan = selectedPlan === "all" || customer.subscriptionPlan === selectedPlan;
       
-      return matchesSearch && matchesCity && matchesStatus && matchesSubscription;
-    })
-    .sort((a, b) => {
-      if (!sortConfig) return 0;
-      
-      if (sortConfig.key === 'totalBookings' || sortConfig.key === 'joiningDate' || sortConfig.key === 'lastActivity') {
-        const valueA = sortConfig.key === 'totalBookings' ? a[sortConfig.key] : new Date(a[sortConfig.key]).getTime();
-        const valueB = sortConfig.key === 'totalBookings' ? b[sortConfig.key] : new Date(b[sortConfig.key]).getTime();
-        
-        return sortConfig.direction === 'ascending' 
-          ? (valueA > valueB ? 1 : -1)
-          : (valueA < valueB ? 1 : -1);
-      }
-      
-      const valueA = a[sortConfig.key]?.toString().toLowerCase() || '';
-      const valueB = b[sortConfig.key]?.toString().toLowerCase() || '';
-      
-      return sortConfig.direction === 'ascending' 
-        ? valueA.localeCompare(valueB)
-        : valueB.localeCompare(valueA);
-    });
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
-  const paginatedCustomers = filteredCustomers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    
-    // Simulate data refresh
-    setTimeout(() => {
-      setIsRefreshing(false);
-      
-      toast({
-        title: "Refreshed",
-        description: "Customer data has been refreshed",
-      });
-    }, 1000);
-  };
-
-  const handleDeleteCustomer = () => {
-    if (!selectedCustomer) return;
-    
-    setCustomers(customers.filter(customer => customer.id !== selectedCustomer));
-    setSelectedCustomers(selectedCustomers.filter(id => id !== selectedCustomer));
-    
-    toast({
-      title: "Customer Deleted",
-      description: "Customer has been deleted successfully",
-    });
-    
-    setSelectedCustomer(null);
-    setIsDeleteDialogOpen(false);
-  };
-
-  const handleMultipleDelete = () => {
-    setCustomers(customers.filter(customer => !selectedCustomers.includes(customer.id)));
-    
-    toast({
-      title: "Customers Deleted",
-      description: `${selectedCustomers.length} customers have been deleted`,
-    });
-    
-    setSelectedCustomers([]);
-  };
-
-  const handleUpdateStatus = (customerId: string, newStatus: 'Active' | 'Inactive') => {
-    setCustomers(customers.map(customer => 
-      customer.id === customerId 
-        ? { ...customer, status: newStatus } 
-        : customer
-    ));
-    
-    toast({
-      title: "Status Updated",
-      description: `Customer status updated to ${newStatus}`,
+      return matchesSearch && matchesCity && matchesStatus && matchesPlan;
     });
   };
 
-  const handleSelectAll = () => {
-    if (selectedCustomers.length === paginatedCustomers.length) {
-      // If all are selected, unselect all
+  const filteredCustomers = filterCustomers();
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedCustomers(filteredCustomers.map(c => c.id));
+    } else {
       setSelectedCustomers([]);
-    } else {
-      // Otherwise select all visible customers
-      setSelectedCustomers(paginatedCustomers.map(c => c.id));
     }
   };
 
-  const handleSelectCustomer = (customerId: string) => {
-    if (selectedCustomers.includes(customerId)) {
-      setSelectedCustomers(selectedCustomers.filter(id => id !== customerId));
-    } else {
+  const handleSelectCustomer = (customerId: string, checked: boolean) => {
+    if (checked) {
       setSelectedCustomers([...selectedCustomers, customerId]);
+    } else {
+      setSelectedCustomers(selectedCustomers.filter(id => id !== customerId));
     }
   };
 
-  const handleSort = (key: keyof Customer) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    
-    setSortConfig({ key, direction });
+  const handleDeleteCustomer = (customerId: string) => {
+    setCustomerToDelete(customerId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    // In a real application, this would call an API
+    console.log(`Deleting customer ${customerToDelete}`);
+    setIsDeleteDialogOpen(false);
+    setCustomerToDelete(null);
+  };
+  
+  const handleBulkAction = (action: string) => {
+    console.log(`Performing ${action} on customers:`, selectedCustomers);
+    setIsBulkActionMenuOpen(false);
+  };
+
+  const handleRefreshData = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
   };
 
   const handleExport = (format: string) => {
-    toast({
-      title: "Export Started",
-      description: `Exporting customer data as ${format.toUpperCase()}`,
-    });
+    console.log(`Exporting customers as ${format}`);
   };
 
-  const resetFilters = () => {
-    setSearchQuery("");
-    setCityFilter("all");
-    setStatusFilter("all");
-    setSubscriptionFilter("all");
-  };
+  const availableCities = Array.from(new Set(customers.map(c => c.city)));
+  const availablePlans = Array.from(new Set(customers.map(c => c.subscriptionPlan)));
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Customer Management</h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
             className="flex items-center gap-2"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
+            onClick={handleRefreshData}
+            disabled={isLoading}
           >
-            <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-            {isRefreshing ? "Refreshing..." : "Refresh"}
+            <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+            {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Download size={16} />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport("csv")}>
-                Export as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("excel")}>
-                Export as Excel
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("pdf")}>
-                Export as PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button className="flex items-center gap-2">
+          <Button size="sm" className="flex items-center gap-2">
             <UserPlus size={16} />
             Add Customer
           </Button>
@@ -313,391 +164,419 @@ export default function CustomerManagement() {
       </div>
 
       <Card>
-        <CardContent className="p-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by name, email or phone..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        <CardHeader className="p-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex-1">
+              <CardTitle>All Customers</CardTitle>
+              <CardDescription>
+                Manage your customer database, view and edit customer information
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <div className="relative">
+                <Search size={16} className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  type="search"
+                  placeholder="Search customers..."
+                  className="pl-10 w-full md:w-[250px]"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Filter size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[220px]">
+                  <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  <div className="p-2">
+                    <Label htmlFor="cityFilter" className="text-xs font-medium">City</Label>
+                    <Select
+                      value={selectedCity}
+                      onValueChange={setSelectedCity}
+                    >
+                      <SelectTrigger id="cityFilter" className="mt-1">
+                        <SelectValue placeholder="All Cities" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Cities</SelectItem>
+                        {availableCities.map(city => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="p-2">
+                    <Label htmlFor="statusFilter" className="text-xs font-medium">Status</Label>
+                    <Select
+                      value={selectedStatus}
+                      onValueChange={setSelectedStatus}
+                    >
+                      <SelectTrigger id="statusFilter" className="mt-1">
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="p-2">
+                    <Label htmlFor="planFilter" className="text-xs font-medium">Plan</Label>
+                    <Select
+                      value={selectedPlan}
+                      onValueChange={setSelectedPlan}
+                    >
+                      <SelectTrigger id="planFilter" className="mt-1">
+                        <SelectValue placeholder="All Plans" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Plans</SelectItem>
+                        {availablePlans.map(plan => (
+                          <SelectItem key={plan} value={plan}>{plan}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <DropdownMenuSeparator />
+                  <div className="p-2">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedCity("all");
+                        setSelectedStatus("all");
+                        setSelectedPlan("all");
+                      }}
+                    >
+                      Reset Filters
+                    </Button>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-1">
+                    <Download size={16} />
+                    <span className="hidden sm:inline">Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>Export as CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("excel")}>Export as Excel</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("pdf")}>Export as PDF</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {selectedCustomers.length > 0 && (
+                <DropdownMenu open={isBulkActionMenuOpen} onOpenChange={setIsBulkActionMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="default">
+                      Bulk Actions ({selectedCustomers.length})
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleBulkAction("email")}>
+                      <Mail size={16} className="mr-2" />
+                      Send Email
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleBulkAction("activate")}>
+                      <Check size={16} className="mr-2" />
+                      Activate
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleBulkAction("deactivate")}>
+                      <Ban size={16} className="mr-2" />
+                      Deactivate
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => handleBulkAction("delete")}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Tabs defaultValue="all" className="w-full">
+            <div className="border-b px-4">
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="all" className="relative">
+                  All Customers
+                  <Badge variant="secondary" className="ml-2">{customers.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="active">
+                  Active
+                  <Badge variant="secondary" className="ml-2">
+                    {customers.filter(c => c.status === "Active").length}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="inactive">
+                  Inactive
+                  <Badge variant="secondary" className="ml-2">
+                    {customers.filter(c => c.status === "Inactive").length}
+                  </Badge>
+                </TabsTrigger>
+              </TabsList>
             </div>
             
-            <div className="flex gap-2 flex-wrap">
-              <Select value={cityFilter} onValueChange={setCityFilter}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="All Cities" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Cities</SelectItem>
-                  <SelectItem value="Mumbai">Mumbai</SelectItem>
-                  <SelectItem value="Delhi">Delhi</SelectItem>
-                  <SelectItem value="Bangalore">Bangalore</SelectItem>
-                  <SelectItem value="Chennai">Chennai</SelectItem>
-                  <SelectItem value="Kolkata">Kolkata</SelectItem>
-                  <SelectItem value="Hyderabad">Hyderabad</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={subscriptionFilter} onValueChange={setSubscriptionFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Plans" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Plans</SelectItem>
-                  <SelectItem value="Premium">Premium</SelectItem>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                  <SelectItem value="Basic">Basic</SelectItem>
-                  <SelectItem value="Trial">Trial</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button variant="ghost" size="icon" onClick={resetFilters} title="Reset filters">
-                <Filter size={16} />
+            <TabsContent value="all" className="m-0">
+              <div className="rounded-md border-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox 
+                          checked={selectedCustomers.length === filteredCustomers.length && filteredCustomers.length > 0}
+                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                        />
+                      </TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Email</TableHead>
+                      <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                      <TableHead className="hidden lg:table-cell">City</TableHead>
+                      <TableHead className="hidden md:table-cell">Plan</TableHead>
+                      <TableHead className="hidden md:table-cell">Bookings</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden lg:table-cell">Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCustomers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-8">
+                          No customers found matching your filters. Try changing your search criteria.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredCustomers.map((customer) => (
+                        <TableRow key={customer.id}>
+                          <TableCell>
+                            <Checkbox 
+                              checked={selectedCustomers.includes(customer.id)}
+                              onCheckedChange={(checked) => handleSelectCustomer(customer.id, !!checked)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{customer.name}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.email}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.phone}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.city}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.subscriptionPlan}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.totalBookings}</TableCell>
+                          <TableCell>
+                            <Badge variant={customer.status === "Active" ? "success" : "secondary"}>
+                              {customer.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.joiningDate}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreVertical size={16} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                  <Eye size={16} className="mr-2" />
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Edit size={16} className="mr-2" />
+                                  Edit Customer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Mail size={16} className="mr-2" />
+                                  Send Email
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteCustomer(customer.id)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 size={16} className="mr-2" />
+                                  Delete Customer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="active" className="m-0">
+              {/* Same table structure but filtered for active customers */}
+              <div className="rounded-md border-0">
+                <Table>
+                  <TableHeader>
+                    {/* Same header structure */}
+                    <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox />
+                      </TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Email</TableHead>
+                      <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                      <TableHead className="hidden lg:table-cell">City</TableHead>
+                      <TableHead className="hidden md:table-cell">Plan</TableHead>
+                      <TableHead className="hidden md:table-cell">Bookings</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden lg:table-cell">Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCustomers
+                      .filter(customer => customer.status === "Active")
+                      .map((customer) => (
+                        <TableRow key={customer.id}>
+                          <TableCell>
+                            <Checkbox 
+                              checked={selectedCustomers.includes(customer.id)}
+                              onCheckedChange={(checked) => handleSelectCustomer(customer.id, !!checked)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{customer.name}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.email}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.phone}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.city}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.subscriptionPlan}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.totalBookings}</TableCell>
+                          <TableCell>
+                            <Badge variant="success">
+                              {customer.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.joiningDate}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical size={16} />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="inactive" className="m-0">
+              {/* Same table structure but filtered for inactive customers */}
+              <div className="rounded-md border-0">
+                <Table>
+                  <TableHeader>
+                    {/* Same header structure */}
+                    <TableRow>
+                      <TableHead className="w-[40px]">
+                        <Checkbox />
+                      </TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Email</TableHead>
+                      <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                      <TableHead className="hidden lg:table-cell">City</TableHead>
+                      <TableHead className="hidden md:table-cell">Plan</TableHead>
+                      <TableHead className="hidden md:table-cell">Bookings</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden lg:table-cell">Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCustomers
+                      .filter(customer => customer.status === "Inactive")
+                      .map((customer) => (
+                        <TableRow key={customer.id}>
+                          <TableCell>
+                            <Checkbox 
+                              checked={selectedCustomers.includes(customer.id)}
+                              onCheckedChange={(checked) => handleSelectCustomer(customer.id, !!checked)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{customer.name}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.email}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.phone}</TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.city}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.subscriptionPlan}</TableCell>
+                          <TableCell className="hidden md:table-cell">{customer.totalBookings}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {customer.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">{customer.joiningDate}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical size={16} />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="flex items-center justify-between px-4 py-4 border-t">
+            <div className="text-sm text-gray-500">
+              Showing {filteredCustomers.length} of {customers.length} customers
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" disabled>
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" disabled>
+                Next
               </Button>
             </div>
           </div>
-          
-          {selectedCustomers.length > 0 && (
-            <div className="flex items-center justify-between bg-muted/40 p-2 rounded-md">
-              <span className="text-sm font-medium ml-2">
-                {selectedCustomers.length} customer{selectedCustomers.length > 1 ? 's' : ''} selected
-              </span>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="text-sm h-8">
-                  <Mail size={14} className="mr-1" />
-                  Email
-                </Button>
-                <Button size="sm" variant="outline" className="text-sm h-8">
-                  <MessageSquare size={14} className="mr-1" />
-                  SMS
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="destructive" 
-                  className="text-sm h-8"
-                  onClick={handleMultipleDelete}
-                >
-                  <Trash2 size={14} className="mr-1" />
-                  Delete
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="border rounded-md overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[50px]">
-                    <Checkbox 
-                      checked={
-                        paginatedCustomers.length > 0 && 
-                        selectedCustomers.length === paginatedCustomers.length
-                      }
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Select all customers"
-                    />
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/60 transition-colors"
-                    onClick={() => handleSort('name')}
-                  >
-                    Name
-                    {sortConfig?.key === 'name' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/60 transition-colors"
-                    onClick={() => handleSort('city')}
-                  >
-                    City
-                    {sortConfig?.key === 'city' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/60 transition-colors"
-                    onClick={() => handleSort('joiningDate')}
-                  >
-                    Join Date
-                    {sortConfig?.key === 'joiningDate' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/60 transition-colors"
-                    onClick={() => handleSort('status')}
-                  >
-                    Status
-                    {sortConfig?.key === 'status' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/60 transition-colors"
-                    onClick={() => handleSort('subscriptionPlan')}
-                  >
-                    Plan
-                    {sortConfig?.key === 'subscriptionPlan' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/60 transition-colors text-right"
-                    onClick={() => handleSort('totalBookings')}
-                  >
-                    Bookings
-                    {sortConfig?.key === 'totalBookings' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/60 transition-colors"
-                    onClick={() => handleSort('lastActivity')}
-                  >
-                    Last Activity
-                    {sortConfig?.key === 'lastActivity' && (
-                      <span className="ml-1">
-                        {sortConfig.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedCustomers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} className="h-24 text-center">
-                      No customers found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedCustomers.map((customer) => (
-                    <TableRow key={customer.id} className="hover:bg-muted/30">
-                      <TableCell>
-                        <Checkbox 
-                          checked={selectedCustomers.includes(customer.id)}
-                          onCheckedChange={() => handleSelectCustomer(customer.id)}
-                          aria-label={`Select ${customer.name}`}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{customer.email}</div>
-                          <div className="text-sm text-muted-foreground">{customer.phone}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{customer.city}</TableCell>
-                      <TableCell>
-                        {new Date(customer.joiningDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={customer.status === "Active" ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-gray-100 text-gray-800 hover:bg-gray-200"}
-                        >
-                          {customer.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={
-                            customer.subscriptionPlan === "Premium" ? "border-purple-500 text-purple-600" : 
-                            customer.subscriptionPlan === "Standard" ? "border-blue-500 text-blue-600" :
-                            customer.subscriptionPlan === "Basic" ? "border-green-500 text-green-600" :
-                            "border-gray-500 text-gray-600"
-                          }
-                        >
-                          {customer.subscriptionPlan}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{customer.totalBookings}</TableCell>
-                      <TableCell>
-                        {new Date(customer.lastActivity).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {/* View details */}}>
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {/* Edit functionality */}}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                <span>Edit</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateStatus(customer.id, customer.status === "Active" ? "Inactive" : "Active")}>
-                                <Check className="mr-2 h-4 w-4" />
-                                <span>Mark as {customer.status === "Active" ? "Inactive" : "Active"}</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-600"
-                                onClick={() => {
-                                  setSelectedCustomer(customer.id);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Delete</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-muted-foreground">
-              Showing {filteredCustomers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} customers
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <p className="text-sm text-muted-foreground">Rows per page</p>
-              <Select
-                value={itemsPerPage.toString()}
-                onValueChange={(value) => {
-                  setItemsPerPage(Number(value));
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue placeholder="10" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage > 1) setCurrentPage(currentPage - 1);
-                    }}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter(page => 
-                    page === 1 || 
-                    page === totalPages || 
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  )
-                  .map((page, i, array) => {
-                    // Add ellipsis
-                    if (i > 0 && array[i] - array[i - 1] > 1) {
-                      return [
-                        <PaginationItem key={`ellipsis-${page}`}>
-                          <PaginationEllipsis />
-                        </PaginationItem>,
-                        <PaginationItem key={page}>
-                          <PaginationLink 
-                            href="#" 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setCurrentPage(page);
-                            }}
-                            isActive={page === currentPage}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      ];
-                    }
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink 
-                          href="#" 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(page);
-                          }}
-                          isActive={page === currentPage}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                    }}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
         </CardContent>
       </Card>
-
-      {/* Delete Confirmation Dialog */}
+      
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Customer</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this customer? This action cannot be undone.
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <p>Are you sure you want to delete this customer? This action cannot be undone and will remove all customer data.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteCustomer}>Delete</Button>
+          <DialogFooter className="sm:justify-end">
+            <Button 
+              type="button" 
+              variant="secondary"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

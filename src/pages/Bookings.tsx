@@ -1,16 +1,17 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingList } from "@/components/bookings/BookingList";
 import { BookingFilters } from "@/components/bookings/BookingFilters";
 import { Button } from "@/components/ui/button";
-import { Calendar, Download, Plus, RefreshCw } from "lucide-react";
-import { BookingStatus } from "@/types";
+import { Download, Plus, RefreshCw } from "lucide-react";
+import { BookingFilters as BookingFiltersType, BookingStatus } from "@/types";
 
 export default function Bookings() {
   const [activeTab, setActiveTab] = useState<string>("pending");
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined, to: Date | undefined }>({
-    from: undefined,
-    to: undefined,
+  const [dateRange, setDateRange] = useState<{ from: string, to: string }>({
+    from: "",
+    to: "",
   });
   const [serviceType, setServiceType] = useState<string>("all");
   const [paymentMode, setPaymentMode] = useState<string>("all");
@@ -37,7 +38,7 @@ export default function Bookings() {
   };
 
   const handleFilterChange = (
-    filters: { dateRange: { from: Date | undefined, to: Date | undefined }, serviceType: string, paymentMode: string, location: string }
+    filters: BookingFiltersType
   ) => {
     setDateRange(filters.dateRange);
     setServiceType(filters.serviceType);
@@ -106,6 +107,7 @@ export default function Bookings() {
         serviceType={serviceType}
         paymentMode={paymentMode}
         location={location}
+        searchQuery={searchQuery}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
       />
@@ -131,11 +133,11 @@ export default function Bookings() {
             <BookingList 
               status="Pending" 
               title="Pending Orders" 
-              dateRange={dateRange}
               serviceType={serviceType}
               paymentMode={paymentMode}
               location={location}
               searchQuery={searchQuery}
+              dateRange={dateRange}
             />
           </TabsContent>
           
@@ -143,11 +145,11 @@ export default function Bookings() {
             <BookingList 
               status="Confirmed" 
               title="Confirmed Orders" 
-              dateRange={dateRange}
               serviceType={serviceType}
               paymentMode={paymentMode}
               location={location}
               searchQuery={searchQuery}
+              dateRange={dateRange}
             />
           </TabsContent>
           
@@ -155,11 +157,11 @@ export default function Bookings() {
             <BookingList 
               status="Completed" 
               title="Completed Orders" 
-              dateRange={dateRange}
               serviceType={serviceType}
               paymentMode={paymentMode}
               location={location}
               searchQuery={searchQuery}
+              dateRange={dateRange}
             />
           </TabsContent>
         </div>

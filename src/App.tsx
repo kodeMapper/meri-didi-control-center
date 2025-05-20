@@ -15,6 +15,13 @@ import WorkerRegistration from "./pages/WorkerRegistration";
 import WorkerProfilePage from "./pages/WorkerProfilePage";
 import CompletedServices from "./pages/CompletedServices";
 import NotFound from "./pages/NotFound";
+import SliderManagement from "./pages/SliderManagement";
+import PromoCodes from "./pages/PromoCodes";
+import CustomerManagement from "./pages/CustomerManagement";
+import Subscriptions from "./pages/Subscriptions";
+import Gallery from "./pages/Gallery";
+import FAQManagement from "./pages/FAQManagement";
+import SystemSettings from "./pages/SystemSettings";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +42,13 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/worker-registration" element={<WorkerRegistration />} />
             <Route path="/worker-profile/:id" element={<WorkerProfilePage />} />
+            <Route path="/slider-management" element={<SliderManagement />} />
+            <Route path="/promo-codes" element={<PromoCodes />} />
+            <Route path="/customer-management" element={<CustomerManagement />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/faq-management" element={<FAQManagement />} />
+            <Route path="/system-settings" element={<SystemSettings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

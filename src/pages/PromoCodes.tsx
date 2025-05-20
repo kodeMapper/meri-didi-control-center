@@ -1,10 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { 
   Edit, 
   Trash2, 
   Search, 
-  Plus, 
-  Calendar, 
+  Plus,
   RefreshCcw, 
   Download, 
   Check,
@@ -22,7 +22,6 @@ import {
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableFooter,
   TableHead,
@@ -35,7 +34,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -45,7 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addPromoCode, getPromoCodes, updatePromoCode, deletePromoCode } from "@/lib/supabase";
 import { format } from 'date-fns';
 import { DateRange } from "react-day-picker";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -377,42 +375,44 @@ function PromoCodes() {
                   <Label htmlFor="expiresAt" className="text-right">
                     Expires At
                   </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !expiresAt?.from && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {expiresAt?.from ? (
-                          expiresAt.to ? (
-                            `${format(expiresAt.from, "PPP")} - ${format(
-                              expiresAt.to,
-                              "PPP"
-                            )}`
+                  <div className="col-span-3">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !expiresAt?.from && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {expiresAt?.from ? (
+                            expiresAt.to ? (
+                              `${format(expiresAt.from, "PPP")} - ${format(
+                                expiresAt.to,
+                                "PPP"
+                              )}`
+                            ) : (
+                              format(expiresAt.from, "PPP")
+                            )
                           ) : (
-                            format(expiresAt.from, "PPP")
-                          )
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                      <Calendar
-                        mode="range"
-                        defaultMonth={expiresAt?.from}
-                        selected={expiresAt}
-                        onSelect={setExpiresAt}
-                        disabled={{ before: new Date() }}
-                        numberOfMonths={2}
-                        pagedNavigation
-                      />
-                    </PopoverContent>
-                  </Popover>
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                        <Calendar
+                          mode="range"
+                          defaultMonth={expiresAt?.from}
+                          selected={expiresAt}
+                          onSelect={setExpiresAt}
+                          disabled={{ before: new Date() }}
+                          numberOfMonths={2}
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="description" className="text-right">
@@ -503,6 +503,7 @@ function PromoCodes() {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                           <span className="sr-only">Open menu</span>
+                          <MoreVertical size={16} />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -570,42 +571,44 @@ function PromoCodes() {
               <Label htmlFor="expiresAt" className="text-right">
                 Expires At
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !expiresAt?.from && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expiresAt?.from ? (
-                      expiresAt.to ? (
-                        `${format(expiresAt.from, "PPP")} - ${format(
-                          expiresAt.to,
-                          "PPP"
-                        )}`
+              <div className="col-span-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !expiresAt?.from && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {expiresAt?.from ? (
+                        expiresAt.to ? (
+                          `${format(expiresAt.from, "PPP")} - ${format(
+                            expiresAt.to,
+                            "PPP"
+                          )}`
+                        ) : (
+                          format(expiresAt.from, "PPP")
+                        )
                       ) : (
-                        format(expiresAt.from, "PPP")
-                      )
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                  <Calendar
-                    mode="range"
-                    defaultMonth={expiresAt?.from}
-                    selected={expiresAt}
-                    onSelect={setExpiresAt}
-                    disabled={{ before: new Date() }}
-                    numberOfMonths={2}
-                    pagedNavigation
-                  />
-                </PopoverContent>
-              </Popover>
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                    <Calendar
+                      mode="range"
+                      defaultMonth={expiresAt?.from}
+                      selected={expiresAt}
+                      onSelect={setExpiresAt}
+                      disabled={{ before: new Date() }}
+                      numberOfMonths={2}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">

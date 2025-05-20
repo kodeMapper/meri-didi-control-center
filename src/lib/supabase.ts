@@ -363,5 +363,44 @@ export async function getUnreadNotificationsCount(): Promise<number> {
   }
 }
 
+// Mock implementations for PromoCodes
+export const getPromoCodes = async () => {
+  return [
+    {
+      id: "1",
+      code: "WELCOME2025",
+      discount: 20,
+      expires_at: new Date().toISOString(),
+      description: "Welcome discount for new users",
+      usage_limit: 100,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "2",
+      code: "SUMMER25",
+      discount: 25,
+      expires_at: new Date(new Date().setMonth(new Date().getMonth() + 2)).toISOString(),
+      description: "Summer special discount",
+      usage_limit: 200,
+      created_at: new Date().toISOString()
+    }
+  ];
+};
+
+export const addPromoCode = async (data: any) => {
+  console.log("Adding promo code", data);
+  return { id: Math.random().toString(), ...data };
+};
+
+export const updatePromoCode = async (id: string, data: any) => {
+  console.log(`Updating promo code ${id}`, data);
+  return { id, ...data };
+};
+
+export const deletePromoCode = async (id: string) => {
+  console.log(`Deleting promo code ${id}`);
+  return true;
+};
+
 // Export the supabase client directly so it can be used elsewhere
 export { supabase };
