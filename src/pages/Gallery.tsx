@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { GalleryItem } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ export default function Gallery() {
     description: "Customer John D. with our professional cleaner after a successful service",
     type: "image",
     url: "https://images.unsplash.com/photo-1581578731548-c64695cc6952",
-    category: "customer",
+    category: "Customer Testimonial",
     createdAt: "2025-04-20T10:30:00Z",
     featured: true
   },
@@ -29,7 +30,7 @@ export default function Gallery() {
     description: "Our chef preparing a gourmet meal at client's home",
     type: "image",
     url: "https://images.unsplash.com/photo-1556911220-bff31c812dba",
-    category: "worker",
+    category: "Service Showcase",
     createdAt: "2025-04-15T14:20:00Z",
     featured: false
   },
@@ -40,7 +41,7 @@ export default function Gallery() {
     type: "video",
     url: "https://example.com/testimonial.mp4",
     thumbnail: "https://images.unsplash.com/photo-1535295972055-1c762f4483e5",
-    category: "customer",
+    category: "Customer Testimonial",
     createdAt: "2025-04-10T09:15:00Z",
     featured: true
   }

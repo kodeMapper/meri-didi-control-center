@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { BookingCard } from "@/components/bookings/BookingCard";
 import { Button } from "@/components/ui/button";
-import { Booking, BookingFilters } from "@/types";
+import { Booking, BookingFilters, BookingStatus } from "@/types";
 import { LocationMapDialog } from "@/components/bookings/LocationMapDialog";
 import { BookingService } from "@/services/mockDatabase";
 import { BookingDetails } from "@/components/bookings/BookingDetails";
 
 interface BookingListProps {
-  status: "Pending" | "Confirmed" | "Completed" | "Cancelled";
+  status: BookingStatus;
   title: string;
   dateRange?: { from: string; to: string };
   filters?: BookingFilters;

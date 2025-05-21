@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Notification } from '@/types';
+import { Notification, NotificationType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bell, Check, CheckCheck, Download } from 'lucide-react';
@@ -188,7 +188,7 @@ interface NotificationItemProps {
 }
 
 function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps) {
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: NotificationType) => {
     switch (type) {
       case 'New Worker Application':
         return 'bg-blue-100 text-blue-800';
@@ -198,6 +198,8 @@ function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps)
         return 'bg-purple-100 text-purple-800';
       case 'Booking Completed':
         return 'bg-yellow-100 text-yellow-800';
+      case 'Booking Cancelled':
+        return 'bg-red-100 text-red-800';
       case 'Payment Received':
         return 'bg-green-100 text-green-800';
       case 'Profile Activated':

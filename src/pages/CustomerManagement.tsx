@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Customer, CITIES } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -401,7 +402,7 @@ export default function CustomerManagement() {
             <div>
               <Label htmlFor="city">City</Label>
               <Select 
-                value={editFormData.city as string || ''} 
+                value={editFormData.city || ''} 
                 onValueChange={(value) => handleSelectChange('city', value)}
               >
                 <SelectTrigger id="city">

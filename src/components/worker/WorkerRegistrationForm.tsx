@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { WorkerService } from '@/services/mockDatabase';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { WorkerStatus, ServiceType } from '@/types';
 
 enum RegistrationStep {
   PersonalInfo = 1,
@@ -194,26 +195,35 @@ export function WorkerRegistrationForm() {
         photoUrl = await uploadFileToSupabase(photoFile, 'photos');
       }
 
-      // Save to local mock database for compatibility
-      const worker = WorkerService.create({
+      // Create the worker object with all required fields
+      const workerData = {
         fullName: personalInfo.fullName,
         email: personalInfo.email,
         phone: personalInfo.phone,
         address: personalInfo.address,
-        city: personalInfo.city as any,
-        gender: personalInfo.gender as any,
+        city: personalInfo.city,
+        gender: personalInfo.gender,
         dateOfBirth: format(personalInfo.dateOfBirth, 'yyyy-MM-dd'),
-        serviceType: professionalDetails.serviceType as any,
+        serviceType: professionalDetails.serviceType as ServiceType,
         experience: parseInt(professionalDetails.experience),
-        availability: professionalDetails.availability as any,
-        idType: professionalDetails.idType as any,
+        availability: professionalDetails.availability,
+        idType: professionalDetails.idType,
         idNumber: professionalDetails.idNumber,
         about: professionalDetails.about,
-        skills: [],
-        status: 'Pending',
-        idProofUrl: idProofUrl,
-        photoUrl: photoUrl,
-      });
+        skills: [] as string[],
+        status: "Pending" as WorkerStatus,
+        rating: 0,
+        totalBookings: 0,
+        completionRate: 0,
+        joiningDate: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        idProofUrl,
+        photoUrl
+      };
+
+      // Save to local mock database for compatibility
+      const worker = WorkerService.create(workerData);
 
       // Save worker data to Supabase
       const { error } = await supabase
@@ -716,9 +726,9 @@ export function WorkerRegistrationForm() {
                   )}
                   
                   <div className="mt-4">
-                    <h3 className="text-sm font-medium">Upload Recent Photograph</h3>
+                    <h3 className="text-sm font-medium">Upload Recent Photo</h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      (A clear, passport-size photo with white background)
+                      (Clear photograph of yourself)
                     </p>
                   </div>
                   
@@ -735,7 +745,7 @@ export function WorkerRegistrationForm() {
                       className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black" 
                       onClick={() => document.getElementById('photo')?.click()}
                     >
-                      {photoFile ? 'Change File' : 'Select File'}
+                      {photoFile ? 'Change Photo' : 'Select Photo'}
                     </Button>
                   </label>
                   
@@ -747,7 +757,7 @@ export function WorkerRegistrationForm() {
                 </div>
               </div>
             </div>
-
+            
             <div className="flex justify-between">
               <Button type="button" variant="outline" onClick={goBack}>
                 Previous
@@ -757,7 +767,17 @@ export function WorkerRegistrationForm() {
                 className="bg-yellow-500 hover:bg-yellow-600 text-black"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Application'
+                )}
               </Button>
             </div>
           </form>

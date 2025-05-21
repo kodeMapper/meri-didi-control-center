@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Worker } from "@/types";
+import { Worker, WorkerStatus } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,7 +31,8 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
         const workerApp = workerApplications.find(w => w.id === workerId);
         
         if (workerApp) {
-          setWorker(mapWorkerApplicationToWorker(workerApp));
+          const mappedWorker = mapWorkerApplicationToWorker(workerApp);
+          setWorker(mappedWorker as Worker);
         } else {
           // Fallback to mock database
           const mockWorker = WorkerService.getById(workerId);
@@ -61,14 +62,16 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
       }
       
       // Also update in mock database for compatibility
-      WorkerService.update(worker.id, { status: "Active" });
+      WorkerService.update(worker.id, { status: "Active" as WorkerStatus });
       
       toast({
         title: "Worker Activated",
         description: "Worker has been activated successfully.",
       });
       
-      setWorker({ ...worker, status: "Active" });
+      if (worker) {
+        setWorker({ ...worker, status: "Active" as WorkerStatus });
+      }
       if (onStatusChange) onStatusChange();
     } catch (error) {
       console.error("Error activating worker:", error);
@@ -166,7 +169,7 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
                 )}
               </div>
               <h2 className="text-xl font-bold">{worker.fullName}</h2>
-              <p className="text-sm text-gray-500">{worker.status === "Active" ? "Active Worker" : "Unknown"}</p>
+              <p className="text-sm text-gray-500">{worker.status === "Active" ? "Active Worker" : worker.status}</p>
               <Badge 
                 variant="outline"
                 className={`${worker.status === "Active" 

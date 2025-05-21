@@ -1,317 +1,426 @@
-import { Worker, Booking, Notification, CategoryStat, ServiceType, Stats } from "@/types";
 
-// For Worker objects, add idProofUrl and photoUrl
-export const WorkerService = {
-  workers: [
+import { Booking, BookingStatus, Customer, GalleryItem, Notification, NotificationType, PromoCode, ServicePlan, Stats, Worker, WorkerStatus } from '@/types';
+
+class WorkerServiceClass {
+  workers: Worker[] = [
     {
       id: "1",
-      fullName: "Rajesh Kumar",
-      email: "rajesh@example.com",
-      phone: "+91 98765 43210",
-      address: "123 Main St, Mumbai",
+      fullName: "Raj Sharma",
+      email: "raj@example.com",
+      phone: "9823456789",
+      address: "123 Main St, Andheri East",
       city: "Mumbai",
       gender: "Male",
       dateOfBirth: "1990-05-15",
-      serviceType: "Cleaning" as ServiceType,
+      serviceType: "Cleaning",
       experience: 5,
       availability: "Weekdays",
-      idType: "Aadhar",
+      idType: "Aadhar Card",
       idNumber: "1234-5678-9012",
-      about: "Experienced cleaner with attention to detail.",
-      skills: ["Deep Cleaning", "Window Cleaning", "Floor Polishing"],
+      about: "Experienced in house cleaning services",
+      skills: ["Deep Cleaning", "Furniture Cleaning", "Floor Polishing"],
       status: "Active",
       rating: 4.8,
-      totalBookings: 45,
+      totalBookings: 32,
       completionRate: 98,
-      joiningDate: "2024-01-15",
-      createdAt: "2024-01-10T10:30:00Z",
-      updatedAt: "2024-05-01T14:20:00Z",
-      idProofUrl: "https://example.com/id/1.jpg",
-      photoUrl: "https://example.com/photos/1.jpg"
+      joiningDate: "2023-10-15",
+      createdAt: "2023-10-15T10:30:00Z",
+      updatedAt: "2025-04-15T14:20:00Z",
+      idProofUrl: "https://example.com/id-proofs/raj-sharma.jpg",
+      photoUrl: "https://randomuser.me/api/portraits/men/44.jpg"
     },
     {
       id: "2",
-      fullName: "Priya Sharma",
+      fullName: "Priya Patel",
       email: "priya@example.com",
-      phone: "+91 87654 56789",
-      address: "456 Park Ave, Delhi",
-      city: "Delhi",
+      phone: "9876543210",
+      address: "456 Park Avenue, Dadar West",
+      city: "Mumbai",
       gender: "Female",
-      dateOfBirth: "1992-11-20",
-      serviceType: "Sweeping" as ServiceType,
+      dateOfBirth: "1992-08-23",
+      serviceType: "Sweeping",
       experience: 3,
-      availability: "Weekends",
-      idType: "Passport",
-      idNumber: "P1234567",
-      about: "Dedicated sweeper ensuring cleanliness.",
-      skills: ["Floor Sweeping", "Dusting", "Garbage Disposal"],
+      availability: "Full-Time",
+      idType: "PAN Card",
+      idNumber: "ABCDE1234F",
+      about: "Specializing in sweeping and house keeping",
+      skills: ["Floor Sweeping", "Dust Removal", "Waste Management"],
       status: "Active",
       rating: 4.5,
-      totalBookings: 30,
-      completionRate: 95,
-      joiningDate: "2024-02-20",
-      createdAt: "2024-02-15T14:45:00Z",
-      updatedAt: "2024-05-02T09:10:00Z",
-      idProofUrl: "https://example.com/id/2.jpg",
-      photoUrl: "https://example.com/photos/2.jpg"
+      totalBookings: 28,
+      completionRate: 96,
+      joiningDate: "2024-01-10",
+      createdAt: "2024-01-10T09:15:00Z",
+      updatedAt: "2025-03-20T11:45:00Z",
+      idProofUrl: "https://example.com/id-proofs/priya-patel.jpg",
+      photoUrl: "https://randomuser.me/api/portraits/women/26.jpg"
     },
     {
       id: "3",
-      fullName: "Amit Patel",
+      fullName: "Amit Kumar",
       email: "amit@example.com",
-      phone: "+91 76543 67890",
-      address: "789 Cross Rd, Bangalore",
-      city: "Bangalore",
+      phone: "9865432107",
+      address: "789 Business Square, Kurla",
+      city: "Mumbai",
       gender: "Male",
-      dateOfBirth: "1988-08-05",
-      serviceType: "Cooking" as ServiceType,
+      dateOfBirth: "1988-03-10",
+      serviceType: "Cooking",
       experience: 7,
-      availability: "Anytime",
+      availability: "Part-Time",
       idType: "Driving License",
-      idNumber: "DL1234567890",
-      about: "Professional cook specializing in Indian cuisine.",
-      skills: ["Indian", "Continental", "Baking"],
-      status: "Active",
+      idNumber: "DL9876543210",
+      about: "Professional cook with experience in various cuisines",
+      skills: ["Indian Cuisine", "Chinese Food", "Continental"],
+      status: "Pending",
       rating: 4.9,
-      totalBookings: 60,
+      totalBookings: 45,
       completionRate: 99,
-      joiningDate: "2024-03-01",
-      createdAt: "2024-02-25T18:00:00Z",
-      updatedAt: "2024-05-03T11:30:00Z",
-      idProofUrl: "https://example.com/id/3.jpg",
-      photoUrl: "https://example.com/photos/3.jpg"
+      joiningDate: "2023-05-05",
+      createdAt: "2023-05-05T14:10:00Z",
+      updatedAt: "2025-02-18T16:30:00Z",
+      idProofUrl: "https://example.com/id-proofs/amit-kumar.jpg",
+      photoUrl: "https://randomuser.me/api/portraits/men/32.jpg"
     },
     {
       id: "4",
-      fullName: "Deepika Reddy",
-      email: "deepika@example.com",
-      phone: "+91 95432 78901",
-      address: "101 MG Rd, Hyderabad",
-      city: "Hyderabad",
+      fullName: "Anjali Singh",
+      email: "anjali@example.com",
+      phone: "9834567812",
+      address: "101 Heights, Bandra West",
+      city: "Mumbai",
       gender: "Female",
-      dateOfBirth: "1993-04-10",
-      serviceType: "Driving" as ServiceType,
+      dateOfBirth: "1994-11-27",
+      serviceType: "Driving",
       experience: 4,
-      availability: "Weekdays",
-      idType: "Aadhar",
-      idNumber: "9876-5432-1098",
-      about: "Reliable driver with excellent navigation skills.",
-      skills: ["Car Driving", "Traffic Rules", "Navigation"],
+      availability: "Weekends Only",
+      idType: "Passport",
+      idNumber: "P1234567",
+      about: "Professional driver with clean record",
+      skills: ["Car Driving", "Highway Driving", "City Navigation"],
       status: "Active",
       rating: 4.7,
-      totalBookings: 35,
-      completionRate: 96,
-      joiningDate: "2024-03-15",
-      createdAt: "2024-03-10T09:00:00Z",
-      updatedAt: "2024-05-04T16:45:00Z",
-      idProofUrl: "https://example.com/id/4.jpg",
-      photoUrl: "https://example.com/photos/4.jpg"
+      totalBookings: 36,
+      completionRate: 97,
+      joiningDate: "2024-02-20",
+      createdAt: "2024-02-20T08:45:00Z",
+      updatedAt: "2025-04-01T12:15:00Z",
+      idProofUrl: "https://example.com/id-proofs/anjali-singh.jpg",
+      photoUrl: "https://randomuser.me/api/portraits/women/67.jpg"
     }
-  ],
-  getAll: () => {
-    return WorkerService.workers;
-  },
-  getById: (id: string) => {
-    return WorkerService.workers.find((worker) => worker.id === id);
-  },
-  create: (worker: Worker) => {
-    WorkerService.workers.push(worker);
-  },
-  update: (id: string, updatedWorker: Worker) => {
-    WorkerService.workers = WorkerService.workers.map((worker) =>
-      worker.id === id ? updatedWorker : worker
-    );
-  },
-  delete: (id: string) => {
-    WorkerService.workers = WorkerService.workers.filter((worker) => worker.id !== id);
-  },
-};
+  ];
 
-// Update Booking objects to include feedback, rating, and deletionReason
-export const BookingService = {
-  bookings: [
+  getAll() {
+    return this.workers;
+  }
+
+  getById(id: string) {
+    return this.workers.find(worker => worker.id === id) || null;
+  }
+
+  getActive() {
+    return this.workers.filter(worker => worker.status === "Active");
+  }
+  
+  getPending() {
+    return this.workers.filter(worker => worker.status === "Pending");
+  }
+  
+  getRejected() {
+    return this.workers.filter(worker => worker.status === "Rejected");
+  }
+
+  create(worker: Omit<Worker, 'id' | 'rating' | 'totalBookings' | 'completionRate' | 'joiningDate' | 'createdAt' | 'updatedAt'>) {
+    const newWorker: Worker = {
+      ...worker,
+      id: crypto.randomUUID(),
+      rating: 0,
+      totalBookings: 0,
+      completionRate: 0,
+      joiningDate: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    this.workers.push(newWorker);
+    return newWorker;
+  }
+
+  update(id: string, updates: Partial<Worker>) {
+    const workerIndex = this.workers.findIndex(worker => worker.id === id);
+    if (workerIndex === -1) return null;
+    
+    this.workers[workerIndex] = {
+      ...this.workers[workerIndex],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return this.workers[workerIndex];
+  }
+
+  delete(id: string) {
+    const index = this.workers.findIndex(worker => worker.id === id);
+    if (index !== -1) {
+      this.workers.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+}
+
+class BookingServiceClass {
+  bookings: Booking[] = [
     {
-      id: "b001",
-      customerId: "c001",
-      customerName: "John Doe",
-      customerEmail: "john@example.com",
-      customerPhone: "+1 234-567-8901",
-      customerAddress: "456 Maple St, Mumbai",
+      id: "1",
+      customerId: "c1",
+      customerName: "Rahul Mehta",
+      customerEmail: "rahul@example.com",
+      customerPhone: "9876543210",
+      customerAddress: "22 Lake View, Powai, Mumbai",
       workerId: "1",
-      workerName: "Rajesh Kumar",
-      workerEmail: "rajesh@example.com",
-      workerPhone: "+91 98765 43210",
-      serviceType: "Cleaning" as ServiceType,
-      serviceName: "Deep Cleaning",
+      workerName: "Raj Sharma",
+      workerEmail: "raj@example.com",
+      workerPhone: "9823456789",
+      serviceType: "Cleaning",
+      serviceName: "Deep House Cleaning",
       serviceDuration: 3,
-      serviceDate: "2025-05-20",
+      serviceDate: "2025-05-15",
       serviceTime: "10:00 AM",
       amount: 1200,
-      status: "Confirmed",
-      paymentMode: "Online",
-      additionalNotes: "Please bring eco-friendly cleaning products",
-      feedback: "",
-      rating: 0,
-      createdAt: "2025-05-15T09:30:00Z",
-      updatedAt: "2025-05-15T09:30:00Z",
-      deletionReason: ""
-    },
-    {
-      id: "b002",
-      customerId: "c002",
-      customerName: "Alice Smith",
-      customerEmail: "alice@example.com",
-      customerPhone: "+1 345-678-9012",
-      customerAddress: "789 Oak St, Delhi",
-      workerId: "3",
-      workerName: "Amit Patel",
-      workerEmail: "amit@example.com",
-      workerPhone: "+91 76543 67890",
-      serviceType: "Cooking" as ServiceType,
-      serviceName: "Indian Cuisine",
-      serviceDuration: 2,
-      serviceDate: "2025-05-22",
-      serviceTime: "07:00 PM",
-      amount: 1500,
-      status: "Pending",
+      status: "Completed",
+      notes: "Please bring all required cleaning supplies",
+      additionalNotes: "The customer has a pet dog",
       paymentMode: "Cash",
-      additionalNotes: "Please prepare vegetarian dishes only",
-      feedback: "",
-      rating: 0,
-      createdAt: "2025-05-16T15:45:00Z",
-      updatedAt: "2025-05-16T15:45:00Z",
+      feedback: "Great service, very thorough cleaning",
+      rating: 5,
+      createdAt: "2025-05-10T14:30:00Z",
+      updatedAt: "2025-05-15T13:45:00Z",
       deletionReason: ""
     },
     {
-      id: "b003",
-      customerId: "c003",
-      customerName: "Bob Johnson",
-      customerEmail: "bob@example.com",
-      customerPhone: "+1 456-789-0123",
-      customerAddress: "123 Pine St, Bangalore",
+      id: "2",
+      customerId: "c2",
+      customerName: "Neha Shah",
+      customerEmail: "neha@example.com",
+      customerPhone: "9876541230",
+      customerAddress: "7B Green Avenue, Andheri West, Mumbai",
+      workerId: "3",
+      workerName: "Amit Kumar",
+      workerEmail: "amit@example.com",
+      workerPhone: "9865432107",
+      serviceType: "Cooking",
+      serviceName: "Party Catering",
+      serviceDuration: 5,
+      serviceDate: "2025-05-20",
+      serviceTime: "03:00 PM",
+      amount: 3500,
+      status: "Confirmed",
+      notes: "Party for 15 people",
+      additionalNotes: "Vegetarian food only",
+      paymentMode: "Online",
+      feedback: "",
+      rating: 0,
+      createdAt: "2025-05-12T10:15:00Z",
+      updatedAt: "2025-05-12T11:20:00Z",
+      deletionReason: ""
+    },
+    {
+      id: "3",
+      customerId: "c3",
+      customerName: "Vikram Singh",
+      customerEmail: "vikram@example.com",
+      customerPhone: "9845673210",
+      customerAddress: "33 Business Park, Goregaon East, Mumbai",
       workerId: "1",
-      workerName: "Rajesh Kumar",
-      workerEmail: "rajesh@example.com",
-      workerPhone: "+91 98765 43210",
-      serviceType: "Cleaning" as ServiceType,
-      serviceName: "Full House Cleaning",
+      workerName: "Raj Sharma",
+      workerEmail: "raj@example.com",
+      workerPhone: "9823456789",
+      serviceType: "Cleaning",
+      serviceName: "Office Cleaning",
       serviceDuration: 4,
       serviceDate: "2025-05-25",
-      serviceTime: "09:00 AM",
+      serviceTime: "08:00 AM",
       amount: 1800,
-      status: "Completed",
+      status: "Pending",
+      notes: "Focus on sanitizing all surfaces",
+      additionalNotes: "",
       paymentMode: "Card",
-      additionalNotes: "Please clean all windows and balconies",
-      feedback: "Excellent service, very thorough cleaning",
-      rating: 5,
-      createdAt: "2025-05-17T12:00:00Z",
-      updatedAt: "2025-05-25T17:00:00Z",
+      feedback: "",
+      rating: 0,
+      createdAt: "2025-05-18T09:30:00Z",
+      updatedAt: "2025-05-18T09:30:00Z",
       deletionReason: ""
     }
-  ],
-  getAll: () => {
-    return BookingService.bookings;
-  },
-  getById: (id: string) => {
-    return BookingService.bookings.find((booking) => booking.id === id);
-  },
-  create: (booking: Booking) => {
-    BookingService.bookings.push(booking);
-  },
-  update: (id: string, updatedBooking: Booking) => {
-    BookingService.bookings = BookingService.bookings.map((booking) =>
-      booking.id === id ? updatedBooking : booking
-    );
-  },
-  delete: (id: string) => {
-    BookingService.bookings = BookingService.bookings.filter((booking) => booking.id !== id);
-  },
-};
+  ];
 
-// Update Notification objects to include title
-export const NotificationService = {
-  notifications: [
+  getAll() {
+    return this.bookings;
+  }
+
+  getById(id: string) {
+    return this.bookings.find(booking => booking.id === id) || null;
+  }
+  
+  getRecent(limit = 5) {
+    return this.bookings
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
+  }
+  
+  getPending() {
+    return this.bookings.filter(booking => booking.status === "Pending");
+  }
+  
+  getCompleted() {
+    return this.bookings.filter(booking => booking.status === "Completed");
+  }
+
+  create(booking: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>) {
+    const newBooking: Booking = {
+      ...booking,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    this.bookings.push(newBooking);
+    return newBooking;
+  }
+
+  update(id: string, updates: Partial<Booking>) {
+    const bookingIndex = this.bookings.findIndex(booking => booking.id === id);
+    if (bookingIndex === -1) return null;
+    
+    this.bookings[bookingIndex] = {
+      ...this.bookings[bookingIndex],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return this.bookings[bookingIndex];
+  }
+
+  delete(id: string) {
+    const index = this.bookings.findIndex(booking => booking.id === id);
+    if (index !== -1) {
+      this.bookings.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+}
+
+class NotificationServiceClass {
+  notifications: Notification[] = [
     {
-      id: "n001",
+      id: "1",
       type: "New Worker Application",
       title: "New Worker Application Received",
-      message: "A new worker has applied for the Cleaning category",
+      message: "A new worker application has been submitted by Vishal Patel for review.",
       read: false,
-      createdAt: "2025-05-20T08:30:00Z"
+      createdAt: "2025-05-18T09:30:00Z",
+      userType: "Admin",
+      userIdentifier: "admin1"
     },
     {
-      id: "n002",
+      id: "2",
       type: "Worker Verified",
-      title: "Worker Verified Successfully",
-      message: "Rajesh Kumar has been verified for Cleaning services",
+      title: "Worker Verification Complete",
+      message: "Suresh Kumar's identity and documents have been successfully verified.",
       read: false,
-      createdAt: "2025-05-19T14:20:00Z"
+      createdAt: "2025-05-17T14:30:00Z",
+      userType: "Worker",
+      userIdentifier: "worker123"
     },
     {
-      id: "n003",
+      id: "3",
       type: "New Booking",
       title: "New Booking Received",
-      message: "John Doe has booked a Cleaning service for May 20th",
+      message: "Ajay Singh has booked a cleaning service for May 25, 2025.",
       read: false,
-      createdAt: "2025-05-18T11:45:00Z"
-    },
-    {
-      id: "n004",
-      type: "Booking Completed",
-      title: "Booking Completed",
-      message: "Bob Johnson's cleaning service has been completed",
-      read: false,
-      createdAt: "2025-05-25T18:00:00Z"
+      createdAt: "2025-05-16T11:15:00Z",
+      userType: "Worker",
+      userIdentifier: "worker456"
     }
-  ],
-  getAll: () => {
-    return NotificationService.notifications;
-  },
-  getById: (id: string) => {
-    return NotificationService.notifications.find((notification) => notification.id === id);
-  },
-  create: (notification: Notification) => {
-    NotificationService.notifications.push(notification);
-  },
-  update: (id: string, updatedNotification: Notification) => {
-    NotificationService.notifications = NotificationService.notifications.map((notification) =>
-      notification.id === id ? updatedNotification : notification
-    );
-  },
-  delete: (id: string) => {
-    NotificationService.notifications = NotificationService.notifications.filter(
-      (notification) => notification.id !== id
-    );
-  },
-  markAsRead: (id: string) => {
-    NotificationService.notifications = NotificationService.notifications.map((notification) =>
-      notification.id === id ? { ...notification, read: true } : notification
-    );
-  },
-  markAllAsRead: () => {
-    NotificationService.notifications = NotificationService.notifications.map((notification) => ({
-      ...notification,
-      read: true,
-    }));
-  },
-};
-
-// Update the CategoryStats to match the required format
-export const getWorkerCategoryStats = (): CategoryStat[] => {
-  return [
-    { name: "Cleaning", value: 35, color: "#4CAF50" },
-    { name: "Cooking", value: 25, color: "#2196F3" },
-    { name: "Driving", value: 20, color: "#FF9800" },
-    { name: "Sweeping", value: 15, color: "#9C27B0" },
-    { name: "Landscaping", value: 5, color: "#607D8B" }
   ];
-};
 
-export const getDashboardStats = (): Stats => {
-  return {
-    workers: 120,
-    bookings: 450,
-    earnings: 25000,
-    activeWorkers: 85
-  };
-};
+  getAll() {
+    return this.notifications as Notification[];
+  }
+  
+  getUnread() {
+    return this.notifications.filter(notification => !notification.read) as Notification[];
+  }
+  
+  getByUser(userType: string, userIdentifier: string) {
+    return this.notifications.filter(
+      notification => notification.userType === userType && notification.userIdentifier === userIdentifier
+    ) as Notification[];
+  }
+
+  create(notification: Omit<Notification, 'id' | 'createdAt'>) {
+    const newNotification: Notification = {
+      ...notification,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    
+    this.notifications.push(newNotification);
+    return newNotification;
+  }
+
+  markAsRead(id: string) {
+    const notification = this.notifications.find(n => n.id === id);
+    if (notification) {
+      notification.read = true;
+      return true;
+    }
+    return false;
+  }
+
+  markAllAsRead() {
+    this.notifications.forEach(notification => {
+      notification.read = true;
+    });
+    return true;
+  }
+
+  delete(id: string) {
+    const index = this.notifications.findIndex(notification => notification.id === id);
+    if (index !== -1) {
+      this.notifications.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+}
+
+class StatsServiceClass {
+  getStats(): Stats {
+    return {
+      workers: 45,
+      bookings: 128,
+      earnings: 152000,
+      activeWorkers: 32,
+      totalWorkers: 45,
+      growthRates: {
+        workers: 15,
+        bookings: 24,
+        earnings: 18
+      },
+      pendingApprovals: 8,
+      bookingsThisWeek: 38,
+      workersByCategory: [
+        { name: "Cleaning", value: 18, color: "#10B981" },
+        { name: "Cooking", value: 12, color: "#F59E0B" },
+        { name: "Driving", value: 8, color: "#3B82F6" },
+        { name: "Sweeping", value: 7, color: "#EC4899" }
+      ]
+    };
+  }
+}
+
+export const WorkerService = new WorkerServiceClass();
+export const BookingService = new BookingServiceClass();
+export const NotificationService = new NotificationServiceClass();
+export const StatsService = new StatsServiceClass();
