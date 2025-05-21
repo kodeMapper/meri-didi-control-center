@@ -17,7 +17,7 @@ import {
   deleteWorkerApplication 
 } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, TooltipProps } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function Dashboard() {
   const [stats, setStats] = useState<Stats>(StatsService.getStats());
@@ -206,7 +206,7 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card>
+        <Card className="h-[400px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Workers by Category</CardTitle>
           </CardHeader>
@@ -217,7 +217,7 @@ function Dashboard() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="h-[400px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Booking Trends</CardTitle>
           </CardHeader>
@@ -243,7 +243,7 @@ function Dashboard() {
                           <div className="bg-white p-3 border rounded-md shadow">
                             <p className="font-medium">{label}</p>
                             <p className="text-blue-600">
-                              bookings : {payload[0].value}
+                              Bookings: {payload[0].value}
                             </p>
                           </div>
                         );
@@ -265,7 +265,7 @@ function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="space-y-6">
         <PendingWorkersList
           workers={pendingWorkers}
           onApprove={handleApproveWorker}

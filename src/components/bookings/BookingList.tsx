@@ -1,257 +1,196 @@
 
 import { useState, useEffect } from "react";
+import { BookingCard } from "@/components/bookings/BookingCard";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Booking, BookingStatus } from "@/types";
-import { 
-  Eye, 
-  MapPin, 
-  MoreHorizontal, 
-  Phone, 
-  Calendar, 
-  Clock, 
-  DollarSign,
-  User,
-  Briefcase
-} from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { Booking, BookingFiltersType } from "@/types";
+import { LocationMapDialog } from "@/components/bookings/LocationMapDialog";
 import { BookingService } from "@/services/mockDatabase";
-import { LocationMapDialog } from "./LocationMapDialog";
 
-export interface BookingListProps {
-  status: BookingStatus;
+interface BookingListProps {
+  status: "Pending" | "Confirmed" | "Completed" | "Cancelled";
   title: string;
   dateRange?: { from: string; to: string };
-  filters?: {
-    serviceType: string;
-    paymentMode: string;
-    location: string;
-    searchQuery: string;
-  };
+  filters?: BookingFiltersType;
 }
 
 export function BookingList({ status, title, dateRange, filters }: BookingListProps) {
-  // Since getByStatus doesn't exist, we'll filter from getAll() manually
-  const [bookings, setBookings] = useState<Booking[]>(
-    BookingService.getAll().filter(booking => booking.status === status)
-  );
-  const [isMapOpen, setIsMapOpen] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState("");
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const [isLocationMapOpen, setIsLocationMapOpen] = useState<boolean>(false);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
   
-  const openMap = (address: string) => {
-    setSelectedAddress(address);
-    setIsMapOpen(true);
-  };
-
-  const filteredBookings = bookings.filter(booking => {
-    // Filter by service type
-    if (filters?.serviceType && filters.serviceType !== "all" && booking.serviceType !== filters.serviceType) {
-      return false;
-    }
+  useEffect(() => {
+    setLoading(true);
     
-    // Filter by payment mode
-    if (filters?.paymentMode && filters.paymentMode !== "all" && booking.paymentMode !== filters.paymentMode) {
-      return false;
-    }
-    
-    // Filter by location (simple substring match)
-    if (filters?.location && filters.location !== "all" && !booking.customerAddress.toLowerCase().includes(filters.location.toLowerCase())) {
-      return false;
-    }
-    
-    // Filter by search query (match against customer name, worker name, or service type)
-    if (filters?.searchQuery && !booking.customerName.toLowerCase().includes(filters.searchQuery.toLowerCase()) && 
-        !booking.workerName.toLowerCase().includes(filters.searchQuery.toLowerCase()) && 
-        !booking.serviceType.toLowerCase().includes(filters.searchQuery.toLowerCase()) &&
-        !booking.serviceName.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    // Filter by date range
-    if (dateRange?.from && dateRange.to) {
-      const bookingDate = new Date(booking.serviceDate);
-      const fromDate = new Date(dateRange.from);
-      const toDate = new Date(dateRange.to);
-      
-      if (bookingDate < fromDate || bookingDate > toDate) {
-        return false;
+    // Get or mock bookings data with the given filters
+    const fetchBookings = async () => {
+      try {
+        // If we can access the BookingService, use it
+        if (typeof BookingService.getAll === 'function') {
+          // Get all bookings and filter by status
+          const allBookings = BookingService.getAll();
+          const filteredBookings = allBookings.filter(booking => booking.status === status);
+          
+          // Apply date range filter if provided
+          let result = filteredBookings;
+          if (dateRange && dateRange.from && dateRange.to) {
+            const fromDate = new Date(dateRange.from);
+            const toDate = new Date(dateRange.to);
+            
+            result = result.filter(booking => {
+              const bookingDate = new Date(booking.serviceDate);
+              return bookingDate >= fromDate && bookingDate <= toDate;
+            });
+          }
+          
+          // Apply service type filter
+          if (filters && filters.serviceType && filters.serviceType !== "all") {
+            result = result.filter(booking => booking.serviceName === filters.serviceType);
+          }
+          
+          // Apply payment mode filter
+          if (filters && filters.paymentMode && filters.paymentMode !== "all") {
+            result = result.filter(booking => booking.paymentMode === filters.paymentMode);
+          }
+          
+          // Apply location filter
+          if (filters && filters.location && filters.location !== "all") {
+            result = result.filter(booking => booking.location === filters.location);
+          }
+          
+          // Apply search query
+          if (filters && filters.searchQuery) {
+            const query = filters.searchQuery.toLowerCase();
+            result = result.filter(booking => 
+              booking.customerName?.toLowerCase().includes(query) || 
+              booking.workerName?.toLowerCase().includes(query) ||
+              booking.serviceName?.toLowerCase().includes(query) ||
+              booking.id.toLowerCase().includes(query)
+            );
+          }
+          
+          setBookings(result);
+          setHasMore(false); // Mock pagination for now
+        } else {
+          // Fallback for mock data when BookingService is not fully implemented
+          setBookings([]);
+          setHasMore(false);
+        }
+      } catch (error) {
+        console.error("Error fetching bookings:", error);
+        setBookings([]);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
     
-    return true;
-  });
-
-  const getStatusColor = (status: BookingStatus) => {
-    switch (status) {
-      case "Pending":
-        return "border-yellow-500";
-      case "Confirmed":
-        return "border-blue-500";
-      case "Completed":
-        return "border-green-500";
-      case "Cancelled":
-        return "border-red-500";
-      default:
-        return "border-gray-500";
+    fetchBookings();
+  }, [status, dateRange, filters, page]);
+  
+  const handleLoadMore = () => {
+    if (hasMore) {
+      setPage(p => p + 1);
     }
   };
-
-  const handleViewBooking = (id: string) => {
-    console.log(`View booking with ID: ${id}`);
+  
+  const handleViewLocation = (address: string) => {
+    setSelectedLocation(address);
+    setIsLocationMapOpen(true);
   };
-
-  const handleEditBooking = (id: string) => {
-    console.log(`Edit booking with ID: ${id}`);
+  
+  const handleCloseLocationMap = () => {
+    setIsLocationMapOpen(false);
   };
-
-  const handleCancelBooking = (id: string) => {
-    console.log(`Cancel booking with ID: ${id}`);
-  };
-
-  const handleProcessRefund = (id: string) => {
-    console.log(`Process refund for booking with ID: ${id}`);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">{title}</h2>
-        <span className="text-sm text-gray-500">
-          Showing {filteredBookings.length} of {bookings.length} bookings
-        </span>
+  
+  if (loading && page === 1) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p className="mt-4 text-gray-500">Loading bookings...</p>
       </div>
-      
-      {filteredBookings.length === 0 ? (
-        <div className="p-8 text-center border rounded-lg bg-white">
-          <p className="text-gray-500">No {status.toLowerCase()} bookings found matching your filters.</p>
-          <Button variant="outline" className="mt-4">
+    );
+  }
+  
+  if (bookings.length === 0) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-[200px]">
+        <div className="bg-gray-100 p-4 rounded-full">
+          <Calendar className="h-8 w-8 text-gray-400" />
+        </div>
+        <h3 className="mt-4 font-medium text-lg">No {title} Bookings</h3>
+        <p className="text-gray-500 text-sm mt-1">
+          There are no bookings matching your criteria.
+        </p>
+        {filters && (Object.values(filters).some(f => f !== "" && f !== "all" && f !== undefined)) && (
+          <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
             Clear Filters
           </Button>
-        </div>
-      ) : (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-          {filteredBookings.map((booking) => (
-            <Card key={booking.id} className="overflow-hidden">
-              <div className={`p-4 border-l-4 ${getStatusColor(booking.status)}`}>
-                <div className="flex justify-between">
-                  <h3 className="font-medium text-lg flex items-center gap-2">
-                    <Briefcase size={16} />
-                    {booking.serviceName}
-                  </h3>
-                  <Badge variant={booking.status === "Cancelled" ? "destructive" : "outline"} className="font-normal">
-                    {booking.status}
-                  </Badge>
-                </div>
-                
-                <div className="mt-4 space-y-3">
-                  <div className="flex items-start gap-2">
-                    <User size={16} className="mt-1 text-gray-500" />
-                    <div>
-                      <div className="font-medium">{booking.customerName}</div>
-                      <div className="text-sm text-gray-600 flex items-center gap-1">
-                        <Phone size={12} /> {booking.customerPhone}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-2">
-                    <Briefcase size={16} className="mt-1 text-gray-500" />
-                    <div>
-                      <div className="font-medium">Worker</div>
-                      <div className="text-sm text-gray-600">{booking.workerName}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2 cursor-pointer hover:text-blue-600" onClick={() => openMap(booking.customerAddress)}>
-                    <MapPin size={16} className="mt-1 text-gray-500" />
-                    <div className="text-sm text-gray-600 truncate max-w-[90%]" title={booking.customerAddress}>
-                      {booking.customerAddress}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-2">
-                    <Calendar size={16} className="mt-1 text-gray-500" />
-                    <div>
-                      <div className="text-sm text-gray-600">
-                        {new Date(booking.serviceDate).toLocaleDateString()} 
-                        <span className="flex items-center gap-1 mt-1">
-                          <Clock size={12} /> {booking.serviceTime}
-                          <span className="ml-1">({booking.serviceDuration} mins)</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="flex items-center gap-2">
-                      <DollarSign size={16} className="text-gray-500" />
-                      <span className="font-semibold">${booking.amount}</span>
-                      {booking.paymentStatus && (
-                        <Badge variant={booking.paymentStatus === "Paid" ? "default" : "outline"} className="ml-2">
-                          {booking.paymentStatus}
-                        </Badge>
-                      )}
-                      {booking.paymentMode && (
-                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
-                          {booking.paymentMode}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleViewBooking(booking.id)} 
-                        className="h-8 w-8"
-                      >
-                        <Eye size={16} />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal size={16} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewBooking(booking.id)}>
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditBooking(booking.id)}>
-                            Edit Booking
-                          </DropdownMenuItem>
-                          {status !== "Cancelled" && status !== "Completed" && (
-                            <DropdownMenuItem onClick={() => handleCancelBooking(booking.id)}>
-                              Cancel Booking
-                            </DropdownMenuItem>
-                          )}
-                          {status === "Cancelled" && (
-                            <DropdownMenuItem onClick={() => handleProcessRefund(booking.id)}>
-                              Process Refund
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
+        )}
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
+        {bookings.map((booking) => (
+          <BookingCard
+            key={booking.id}
+            booking={booking}
+            onViewLocation={handleViewLocation}
+          />
+        ))}
+      </div>
+      
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <Button 
+            variant="outline" 
+            onClick={handleLoadMore}
+            disabled={loading}
+            className="min-w-[200px]"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-gray-200 rounded-full border-t-gray-600"></div>
+                Loading...
+              </>
+            ) : "Load More"}
+          </Button>
         </div>
       )}
       
-      <LocationMapDialog 
-        open={isMapOpen} 
-        onOpenChange={setIsMapOpen} 
-        address={selectedAddress} 
-      />
+      {selectedLocation && (
+        <LocationMapDialog
+          open={isLocationMapOpen}
+          onClose={handleCloseLocationMap}
+          address={selectedLocation}
+        />
+      )}
     </div>
   );
 }
+
+// Adding the missing Calendar icon
+const Calendar = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+    <line x1="16" x2="16" y1="2" y2="6" />
+    <line x1="8" x2="8" y1="2" y2="6" />
+    <line x1="3" x2="21" y1="10" y2="10" />
+  </svg>
+);

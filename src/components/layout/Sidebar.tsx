@@ -7,7 +7,13 @@ import {
   Calendar, 
   Bell, 
   Settings,
-  FileText
+  FileText,
+  ImageIcon,
+  Ticket,
+  CreditCard,
+  HelpCircle,
+  SlidersHorizontal,
+  User
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -73,6 +79,36 @@ export function Sidebar() {
       to: "/bookings",
       icon: <Calendar size={20} />,
       label: "Bookings",
+    },
+    {
+      to: "/customer-management",
+      icon: <User size={20} />,
+      label: "Customer Management",
+    },
+    {
+      to: "/slider-management",
+      icon: <SlidersHorizontal size={20} />,
+      label: "Sliders",
+    },
+    {
+      to: "/promo-codes",
+      icon: <Ticket size={20} />,
+      label: "Promo Codes",
+    },
+    {
+      to: "/subscriptions",
+      icon: <CreditCard size={20} />,
+      label: "Subscriptions",
+    },
+    {
+      to: "/gallery",
+      icon: <ImageIcon size={20} />,
+      label: "Gallery",
+    },
+    {
+      to: "/faq-management",
+      icon: <HelpCircle size={20} />,
+      label: "FAQ Management",
     },
     {
       to: "/notifications",
