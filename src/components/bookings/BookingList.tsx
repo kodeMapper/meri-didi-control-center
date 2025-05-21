@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Booking, BookingFilters } from "@/types";
 import { LocationMapDialog } from "@/components/bookings/LocationMapDialog";
 import { BookingService } from "@/services/mockDatabase";
+import { BookingDetails } from "@/components/bookings/BookingDetails";
 
 interface BookingListProps {
   status: "Pending" | "Confirmed" | "Completed" | "Cancelled";
@@ -18,6 +19,8 @@ export function BookingList({ status, title, dateRange, filters }: BookingListPr
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [isLocationMapOpen, setIsLocationMapOpen] = useState<boolean>(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   
@@ -106,6 +109,16 @@ export function BookingList({ status, title, dateRange, filters }: BookingListPr
     setIsLocationMapOpen(false);
   };
   
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setIsDetailsOpen(true);
+  };
+  
+  const handleBookingDeleted = () => {
+    // Refresh the bookings list
+    setPage(1);
+  };
+  
   if (loading && page === 1) {
     return (
       <div className="p-6 flex flex-col items-center justify-center min-h-[300px]">
@@ -141,8 +154,8 @@ export function BookingList({ status, title, dateRange, filters }: BookingListPr
           <BookingCard
             key={booking.id}
             booking={booking}
-            onViewDetails={() => {}} // This is a required prop in BookingCardProps
-            onDeleted={() => {}} // This is a required prop in BookingCardProps
+            onViewDetails={() => handleViewDetails(booking)}
+            onDeleted={handleBookingDeleted}
             onViewLocation={handleViewLocation}
           />
         ))}
@@ -173,6 +186,14 @@ export function BookingList({ status, title, dateRange, filters }: BookingListPr
           address={selectedLocation}
         />
       )}
+      
+      {selectedBooking && (
+        <BookingDetails
+          booking={selectedBooking}
+          open={isDetailsOpen}
+          onClose={() => setIsDetailsOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -192,8 +213,8 @@ const Calendar = ({ className }: { className?: string }) => (
     className={className}
   >
     <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-    <line x1="16" x2="16" y1="2" y2="6" />
-    <line x1="8" x2="8" y1="2" y2="6" />
-    <line x1="3" x2="21" y1="10" y2="10" />
+    <line x1="16" x2="16" y1="2" y1="6" />
+    <line x1="8" x2="8" y1="2" y1="6" />
+    <line x1="3" x2="21" y1="10" y1="10" />
   </svg>
 );

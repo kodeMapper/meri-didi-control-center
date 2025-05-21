@@ -1,28 +1,9 @@
+
 import { useState } from "react";
 import { Booking } from "@/types";
-import { 
-  Card, 
-  CardContent,
-  CardFooter,
-  CardHeader
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { MapPin, Clock, Calendar, DollarSign, User, ChevronDown, ChevronUp, Eye, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Eye, 
-  Trash2, 
-  Copy,
-  Check,
-  MapPin,
-  Calendar,
-  Clock,
-  User,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { deleteBooking, addNotification } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -31,22 +12,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 
-interface BookingCardProps {
+export interface BookingCardProps {
   booking: Booking;
-  onViewDetails: (booking: Booking) => void;
+  onViewDetails: () => void;
   onDeleted: () => void;
-  onViewLocation?: (address: string) => void; // Added this prop
+  onViewLocation?: (address: string) => void;
 }
 
 export function BookingCard({ booking, onViewDetails, onDeleted, onViewLocation }: BookingCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletionReason, setDeletionReason] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -63,282 +40,160 @@ export function BookingCard({ booking, onViewDetails, onDeleted, onViewLocation 
     }
   };
 
-  const copyToClipboard = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setIsCopied(true);
-    
-    toast({
-      title: "ID Copied",
-      description: "Booking ID has been copied to clipboard",
-    });
-    
-    // Reset copied state after 2 seconds
-    setTimeout(() => {
-      setIsCopied(false);
-    }, 2000);
+  const handleToggleExpand = () => {
+    setExpanded(!expanded);
   };
 
-  const handleDeleteBooking = async () => {
-    if (!deletionReason.trim()) {
-      toast({
-        title: "Error",
-        description: "Please provide a reason for cancellation",
-        variant: "destructive"
-      });
-      return;
+  const handleViewLocation = () => {
+    if (onViewLocation && booking.customerAddress) {
+      onViewLocation(booking.customerAddress);
     }
-    
-    setIsDeleting(true);
-    
-    try {
-      // Delete booking from database, passing both id and reason
-      const success = await deleteBooking(booking.id, deletionReason);
-      
-      if (success) {
-        // Send notification to worker
-        if (booking.workerId) {
-          await addNotification({
-            type: "Booking Cancelled",
-            message: `Booking #${booking.id.substring(0, 8)} has been cancelled. Reason: ${deletionReason}`,
-            title: "Booking Cancelled",
-            read: false,
-            user_type: "worker",
-            user_identifier: booking.workerId
-          });
-        }
-        
-        // Send notification to customer
-        await addNotification({
-          type: "Booking Cancelled",
-          message: `Your booking for ${booking.serviceName} on ${booking.serviceDate} has been cancelled. Reason: ${deletionReason}`,
-          title: "Booking Cancelled",
-          read: false,
-          user_type: "customer",
-          user_identifier: booking.customerId
-        });
-        
-        toast({
-          title: "Booking Deleted",
-          description: `Booking has been cancelled and notifications sent.`,
-        });
-        
-        // Close dialog and reset
-        setIsDeleteDialogOpen(false);
-        setDeletionReason("");
-        onDeleted();
-      }
-    } catch (error) {
-      console.error("Error deleting booking:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete booking",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    } catch (e) {
-      return dateString;
-    }
-  };
-
-  const formatTime = (timeString: string) => {
-    if (!timeString) return "N/A";
-    return timeString;
-  };
-
-  // Helper function to safely get initials
-  const getInitials = (name: string): string => {
-    if (!name) return "?";
-    return name
-      .split(" ")
-      .map(n => n[0] || "")
-      .join("")
-      .toUpperCase();
   };
 
   return (
-    <>
-      <Card className="mb-4 overflow-hidden">
-        <CardHeader className="py-3 px-4 bg-gray-50 border-b flex flex-row justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center">
-              <div 
-                className="relative group cursor-pointer" 
-                onClick={() => copyToClipboard(booking.id)}
-              >
-                <span className="text-sm font-medium text-gray-600">
-                  #{booking.id.substring(0, 8)}
-                </span>
-                <div className="absolute hidden group-hover:flex items-center gap-1 bg-black bg-opacity-70 text-white text-xs py-1 px-2 rounded -top-8 left-0 whitespace-nowrap z-10">
-                  {isCopied ? (
-                    <>
-                      <Check size={12} /> Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={12} /> Copy ID
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            <Badge variant="outline" className={cn(getStatusColor(booking.status))}>
-              {booking.status}
-            </Badge>
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden border">
+      <div className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-medium">
+              Booking #{booking.id.substring(0, 8)}...
+            </h3>
+            <p className="text-sm text-gray-500">{booking.serviceName}</p>
           </div>
+          <Badge variant="outline" className={getStatusColor(booking.status)}>
+            {booking.status}
+          </Badge>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="flex items-center text-gray-600 text-sm">
+            <User size={16} className="mr-2" />
+            <span>
+              {booking.customerName || "Unknown"} {booking.customerEmail ? `(${booking.customerEmail})` : ""}
+            </span>
+          </div>
+          <div className="flex items-center text-gray-600 text-sm">
+            <Calendar size={16} className="mr-2" />
+            <span>{booking.serviceDate || "No date"}</span>
+          </div>
+          <div className="flex items-center text-gray-600 text-sm">
+            <Clock size={16} className="mr-2" />
+            <span>
+              {booking.serviceTime || "No time"} ({booking.serviceDuration || 0} hours)
+            </span>
+          </div>
+          <div className="flex items-center text-gray-600 text-sm">
+            <DollarSign size={16} className="mr-2" />
+            <span>${(booking.amount || 0).toFixed(2)}</span>
+          </div>
+          {booking.customerAddress && (
+            <div className="flex items-center text-gray-600 text-sm col-span-2">
+              <MapPin size={16} className="mr-2 flex-shrink-0" />
+              <span className="truncate">{booking.customerAddress}</span>
+              {onViewLocation && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-2 h-6 p-1" 
+                  onClick={handleViewLocation}
+                >
+                  View
+                </Button>
+              )}
+            </div>
+          )}
+          {booking.workerName && (
+            <div className="flex items-center text-gray-600 text-sm">
+              <User size={16} className="mr-2" />
+              <span>Worker: {booking.workerName}</span>
+            </div>
+          )}
+        </div>
+
+        {expanded && (
+          <div className="mt-4 border-t pt-4">
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>Payment Mode:</strong> {booking.paymentMode || "N/A"}
+            </div>
+            {booking.additionalNotes && (
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>Notes:</strong> {booking.additionalNotes}
+              </div>
+            )}
+            {booking.feedback && (
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>Feedback:</strong> {booking.feedback}
+              </div>
+            )}
+            {booking.rating && (
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>Rating:</strong> {booking.rating} / 5
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-4 flex justify-between items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-gray-600 p-1 h-8" 
+            onClick={handleToggleExpand}
+          >
+            {expanded ? (
+              <>
+                <ChevronUp size={16} className="mr-1" />
+                Show Less
+              </>
+            ) : (
+              <>
+                <ChevronDown size={16} className="mr-1" />
+                Show More
+              </>
+            )}
+          </Button>
+
           <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-gray-500"
-              onClick={() => onViewDetails(booking)}
-              title="View Details"
+              size="sm" 
+              className="text-primary p-0 h-8 w-8"
+              onClick={onViewDetails}
             >
               <Eye size={16} />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-gray-500"
-              onClick={() => setIsDeleteDialogOpen(true)}
-              title="Delete Booking"
-            >
-              <Trash2 size={16} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-gray-500"
-              onClick={() => setIsExpanded(!isExpanded)}
-              title={isExpanded ? "Collapse" : "Expand"}
-            >
-              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </Button>
+            {booking.status !== "Completed" && booking.status !== "Cancelled" && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-red-500 p-0 h-8 w-8"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <X size={16} />
+              </Button>
+            )}
           </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-500">Customer</h4>
-              <div className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-medium">
-                  {getInitials(booking.customerName)}
-                </div>
-                <div>
-                  <div className="font-medium">{booking.customerName || "Unknown"}</div>
-                  <div className="text-xs text-gray-500">{booking.customerEmail || "No email"}</div>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-500">Service</h4>
-              <div>
-                <div className="font-medium">{booking.serviceName || "Unknown Service"}</div>
-                <div className="text-xs text-gray-500">{booking.serviceType || "Unknown Type"}</div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-500">Worker</h4>
-              <div className="flex items-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-medium">
-                  {getInitials(booking.workerName)}
-                </div>
-                <div className="font-medium">{booking.workerName || "Unassigned"}</div>
-              </div>
-            </div>
-          </div>
-          
-          {isExpanded && (
-            <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-1">Date & Time</h4>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar size={16} className="text-gray-400" />
-                    <span>{formatDate(booking.serviceDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm mt-1">
-                    <Clock size={16} className="text-gray-400" />
-                    <span>{formatTime(booking.serviceTime)}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-1">Duration & Price</h4>
-                  <div className="text-sm">Duration: {booking.serviceDuration || 0} hours</div>
-                  <div className="text-sm font-semibold">Amount: ${booking.amount?.toFixed(2) || "0.00"}</div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-500 mb-1">Location</h4>
-                <div className="flex items-start gap-2">
-                  <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm">{booking.customerAddress || "No address provided"}</div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => onViewLocation?.(booking.customerAddress || "")}
-                >
-                  <MapPin size={14} className="mr-1" />
-                  View on Map
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-500 mb-1">Notes</h4>
-                <div className="text-sm bg-gray-50 p-2 rounded min-h-[80px]">
-                  {booking.notes || "No additional notes"}
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-        {isExpanded && (
-          <CardFooter className="border-t bg-gray-50 py-2 px-4 flex justify-between">
-            <div className="text-xs text-gray-500">
-              Created: {formatDate(booking.createdAt)}
-            </div>
-            <div className="text-xs text-gray-500">
-              Last updated: {formatDate(booking.updatedAt)}
-            </div>
-          </CardFooter>
-        )}
-      </Card>
-      
+        </div>
+      </div>
+
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Booking</DialogTitle>
+            <DialogTitle>Cancel Booking</DialogTitle>
             <DialogDescription>
-              You are about to delete booking #{booking.id.substring(0, 8)}. This action cannot be undone.
-              Please provide a reason for cancellation.
+              Are you sure you want to cancel this booking? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Textarea
-                id="deletion-reason"
-                placeholder="Enter reason for cancellation"
-                value={deletionReason}
-                onChange={(e) => setDeletionReason(e.target.value)}
-                className="w-full"
-              />
-            </div>
+          <div className="py-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reason for cancellation
+            </label>
+            <textarea 
+              className="w-full p-2 border rounded-md"
+              rows={3}
+              value={deletionReason}
+              onChange={(e) => setDeletionReason(e.target.value)}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
@@ -346,14 +201,17 @@ export function BookingCard({ booking, onViewDetails, onDeleted, onViewLocation 
             </Button>
             <Button 
               variant="destructive" 
-              onClick={handleDeleteBooking}
-              disabled={!deletionReason.trim() || isDeleting}
+              onClick={() => {
+                onDeleted();
+                setIsDeleteDialogOpen(false);
+              }}
+              disabled={!deletionReason.trim()}
             >
-              {isDeleting ? "Deleting..." : "Delete Booking"}
+              Confirm Cancellation
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

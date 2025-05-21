@@ -13,7 +13,8 @@ import {
   CreditCard,
   HelpCircle,
   SlidersHorizontal,
-  User
+  User,
+  Book
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ const NavItem = ({ to, icon, label, badge, isActive, onClick }: NavItemProps) =>
       to={to}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-        isActive ? "bg-primary text-primary-foreground" : "hover:bg-primary/10"
+        isActive ? "bg-yellow-500 text-black" : "hover:bg-yellow-500/10"
       )}
       onClick={onClick}
     >
@@ -73,7 +74,7 @@ export function Sidebar() {
     {
       to: "/pricing",
       icon: <FileText size={20} />,
-      label: "Pricing",
+      label: "Service Pricing",
     },
     {
       to: "/bookings",
@@ -83,7 +84,7 @@ export function Sidebar() {
     {
       to: "/customer-management",
       icon: <User size={20} />,
-      label: "Customer Management",
+      label: "Customers",
     },
     {
       to: "/slider-management",
@@ -103,7 +104,7 @@ export function Sidebar() {
     {
       to: "/gallery",
       icon: <ImageIcon size={20} />,
-      label: "Gallery",
+      label: "Gallery & Testimonials",
     },
     {
       to: "/faq-management",
@@ -144,10 +145,10 @@ export function Sidebar() {
     >
       <div className="flex h-16 items-center border-b px-4">
         <div className={cn("flex items-center", collapsed ? "justify-center w-full" : "gap-2")}>
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold">
-            M
+          <div className="h-8 w-8 rounded-md bg-yellow-500 flex items-center justify-center text-black font-bold">
+            MD
           </div>
-          {!collapsed && <span className="font-semibold text-xl">Admin Panel</span>}
+          {!collapsed && <span className="font-semibold text-xl">Meri Didi</span>}
         </div>
         {!isMobile && (
           <button

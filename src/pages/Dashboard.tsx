@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Worker, Booking, Stats, CategoryStat } from "@/types";
 import { WorkerService, BookingService, StatsService, NotificationService } from "@/services/mockDatabase";
@@ -148,7 +149,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#FEF7CD]/30">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
