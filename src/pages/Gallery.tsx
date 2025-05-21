@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -214,203 +213,205 @@ export default function Gallery() {
         </div>
       </div>
       
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <CardTitle>Image Gallery</CardTitle>
-              <CardDescription>Manage your image collection for website and app</CardDescription>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              <div className="relative w-full sm:w-auto">
-                <Search size={16} className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="Search images..."
-                  className="pl-10 w-full sm:w-[250px]"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+      <TabsContent value="images">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <CardTitle>Image Gallery</CardTitle>
+                <CardDescription>Manage your image collection for website and app</CardDescription>
               </div>
               
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-2">
+                <div className="relative w-full sm:w-auto">
+                  <Search size={16} className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="search"
+                    placeholder="Search images..."
+                    className="pl-10 w-full sm:w-[250px]"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredGalleryItems.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No images found. Try changing your search or upload a new image.</p>
-            </div>
-          ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {filteredGalleryItems.map((item) => (
-                <div key={item.id} className={`relative group rounded-md border overflow-hidden ${!item.isActive && 'opacity-70'}`}>
-                  <div className="aspect-square relative">
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.title} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200">
-                      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="secondary" size="icon" className="h-8 w-8">
-                              <MoreVertical size={14} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => copyImageUrl(item.imageUrl)}>
-                              <Copy size={14} className="mr-2" />
-                              Copy URL
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit size={14} className="mr-2" />
-                              Edit Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toggleItemStatus(item.id)}>
-                              {item.isActive ? (
-                                <>
-                                  <Trash size={14} className="mr-2" />
-                                  Deactivate
-                                </>
-                              ) : (
-                                <>
-                                  <Check size={14} className="mr-2" />
-                                  Activate
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => {
-                                setItemToDelete(item.id);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash size={14} className="mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+          </CardHeader>
+          <CardContent>
+            {filteredGalleryItems.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No images found. Try changing your search or upload a new image.</p>
+              </div>
+            ) : viewMode === "grid" ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {filteredGalleryItems.map((item) => (
+                  <div key={item.id} className={`relative group rounded-md border overflow-hidden ${!item.isActive && 'opacity-70'}`}>
+                    <div className="aspect-square relative">
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200">
+                        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="secondary" size="icon" className="h-8 w-8">
+                                <MoreVertical size={14} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => copyImageUrl(item.imageUrl)}>
+                                <Copy size={14} className="mr-2" />
+                                Copy URL
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Edit size={14} className="mr-2" />
+                                Edit Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleItemStatus(item.id)}>
+                                {item.isActive ? (
+                                  <>
+                                    <Trash size={14} className="mr-2" />
+                                    Deactivate
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check size={14} className="mr-2" />
+                                    Activate
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setItemToDelete(item.id);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash size={14} className="mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-2 bg-muted/20">
+                      <div className="text-sm font-medium truncate">{item.title}</div>
+                      <div className="flex items-center justify-between mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {item.category}
+                        </Badge>
+                        {!item.isActive && (
+                          <Badge variant="secondary" className="text-xs">
+                            Inactive
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="p-2 bg-muted/20">
-                    <div className="text-sm font-medium truncate">{item.title}</div>
-                    <div className="flex items-center justify-between mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {item.category}
-                      </Badge>
-                      {!item.isActive && (
-                        <Badge variant="secondary" className="text-xs">
-                          Inactive
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="px-4 py-3 text-left font-medium">Image</th>
-                    <th className="px-4 py-3 text-left font-medium">Title</th>
-                    <th className="px-4 py-3 text-left font-medium">Category</th>
-                    <th className="px-4 py-3 text-left font-medium">Created At</th>
-                    <th className="px-4 py-3 text-left font-medium">Status</th>
-                    <th className="px-4 py-3 text-right font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredGalleryItems.map((item) => (
-                    <tr key={item.id} className="border-b">
-                      <td className="px-4 py-3">
-                        <div className="h-12 w-12 rounded overflow-hidden">
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.title} 
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-medium">{item.title}</td>
-                      <td className="px-4 py-3">{item.category}</td>
-                      <td className="px-4 py-3">{new Date(item.createdAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={item.isActive ? "success" : "secondary"}>
-                          {item.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical size={16} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => copyImageUrl(item.imageUrl)}>
-                              <Copy size={16} className="mr-2" />
-                              Copy URL
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit size={16} className="mr-2" />
-                              Edit Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toggleItemStatus(item.id)}>
-                              {item.isActive ? "Deactivate" : "Activate"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => {
-                                setItemToDelete(item.id);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash size={16} className="mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="px-4 py-3 text-left font-medium">Image</th>
+                      <th className="px-4 py-3 text-left font-medium">Title</th>
+                      <th className="px-4 py-3 text-left font-medium">Category</th>
+                      <th className="px-4 py-3 text-left font-medium">Created At</th>
+                      <th className="px-4 py-3 text-left font-medium">Status</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredGalleryItems.map((item) => (
+                      <tr key={item.id} className="border-b">
+                        <td className="px-4 py-3">
+                          <div className="h-12 w-12 rounded overflow-hidden">
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.title} 
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 font-medium">{item.title}</td>
+                        <td className="px-4 py-3">{item.category}</td>
+                        <td className="px-4 py-3">{new Date(item.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={item.isActive ? "success" : "secondary"}>
+                            {item.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical size={16} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => copyImageUrl(item.imageUrl)}>
+                                <Copy size={16} className="mr-2" />
+                                Copy URL
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Edit size={16} className="mr-2" />
+                                Edit Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleItemStatus(item.id)}>
+                                {item.isActive ? "Deactivate" : "Activate"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setItemToDelete(item.id);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash size={16} className="mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {filteredGalleryItems.length} of {galleryItems.length} images
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" disabled>
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm" disabled>
+                  Next
+                </Button>
+              </div>
             </div>
-          )}
-          
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-              Showing {filteredGalleryItems.length} of {galleryItems.length} images
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" disabled>
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </TabsContent>
       
       {/* Upload Image Dialog */}
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>

@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingList } from "@/components/bookings/BookingList";
 import { BookingFilters } from "@/components/bookings/BookingFilters";
 import { Button } from "@/components/ui/button";
 import { Download, Plus, RefreshCw } from "lucide-react";
-import { BookingFilters as BookingFiltersType, BookingStatus } from "@/types";
+import { BookingFilters as BookingFiltersType } from "@/types";
 
 export default function Bookings() {
   const [activeTab, setActiveTab] = useState<string>("pending");
@@ -44,6 +43,7 @@ export default function Bookings() {
     setServiceType(filters.serviceType);
     setPaymentMode(filters.paymentMode);
     setLocation(filters.location);
+    setSearchQuery(filters.searchQuery);
   };
 
   const handleSearch = (query: string) => {
@@ -113,9 +113,9 @@ export default function Bookings() {
       />
 
       <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full md:w-auto grid-cols-3">
+        <TabsList className="grid w-full md:w-auto grid-cols-4">
           <TabsTrigger value="pending" className="relative">
-            Pending Orders
+            Pending
             <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">12</span>
           </TabsTrigger>
           <TabsTrigger value="confirmed">
@@ -126,42 +126,66 @@ export default function Bookings() {
             Completed
             <span className="ml-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">24</span>
           </TabsTrigger>
+          <TabsTrigger value="refunds">
+            Refunds
+            <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">3</span>
+          </TabsTrigger>
         </TabsList>
         
         <div className="mt-6">
           <TabsContent value="pending">
             <BookingList 
-              status="Pending" 
-              title="Pending Orders" 
-              serviceType={serviceType}
-              paymentMode={paymentMode}
-              location={location}
-              searchQuery={searchQuery}
+              status="Pending"
+              title="Pending Orders"
               dateRange={dateRange}
+              filters={{
+                serviceType,
+                paymentMode,
+                location,
+                searchQuery
+              }}
             />
           </TabsContent>
           
           <TabsContent value="confirmed">
             <BookingList 
-              status="Confirmed" 
-              title="Confirmed Orders" 
-              serviceType={serviceType}
-              paymentMode={paymentMode}
-              location={location}
-              searchQuery={searchQuery}
+              status="Confirmed"
+              title="Confirmed Orders"
               dateRange={dateRange}
+              filters={{
+                serviceType,
+                paymentMode,
+                location,
+                searchQuery
+              }}
             />
           </TabsContent>
           
           <TabsContent value="completed">
             <BookingList 
-              status="Completed" 
-              title="Completed Orders" 
-              serviceType={serviceType}
-              paymentMode={paymentMode}
-              location={location}
-              searchQuery={searchQuery}
+              status="Completed"
+              title="Completed Orders"
               dateRange={dateRange}
+              filters={{
+                serviceType,
+                paymentMode,
+                location,
+                searchQuery
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="refunds">
+            <BookingList 
+              status="Cancelled"
+              title="Refund Requests"
+              dateRange={dateRange}
+              filters={{
+                serviceType,
+                paymentMode,
+                location,
+                searchQuery
+              }}
             />
           </TabsContent>
         </div>

@@ -1,111 +1,60 @@
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from "recharts";
-import { ServiceType } from "@/types";
-
-interface CategoryData {
-  category: ServiceType;
-  count: number;
-  percentage: number;
-}
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { CategoryStat } from "@/types";
 
 interface WorkerCategoryChartProps {
-  data: CategoryData[];
+  data: CategoryStat[];
 }
 
-const COLORS = {
-  Cleaning: "#FFDA61",
-  Cooking: "#ea384c",
-  Sweeping: "#1EAEDB",
-  Driving: "#4CAF50",
-  Landscaping: "#9C27B0",
-  Unknown: "#607D8B",
-};
-
-const CustomBar = (props: any) => {
-  const { x, y, width, height, category } = props;
-  const color = COLORS[category as keyof typeof COLORS] || COLORS.Unknown;
-  
-  return (
-    <rect
-      x={x}
-      y={y}
-      width={width}
-      height={height}
-      fill={color}
-      rx={4}
-      ry={4}
-    />
-  );
-};
-
 export function WorkerCategoryChart({ data }: WorkerCategoryChartProps) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-medium">Workers by Category</h3>
-        <button className="text-gray-400 hover:text-gray-600">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="1" />
-            <circle cx="19" cy="12" r="1" />
-            <circle cx="5" cy="12" r="1" />
-          </svg>
-        </button>
-      </div>
+  const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#84cc16'];
 
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={data}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <XAxis type="number" hide />
-            <YAxis
-              type="category"
-              dataKey="category"
-              axisLine={false}
-              tickLine={false}
-              width={80}
-              tick={{ fontSize: 14 }}
-            />
-            <Tooltip
-              formatter={(value: number) => [`${value} workers`, "Count"]}
-              labelFormatter={(value) => `Category: ${value}`}
-            />
-            <Bar
-              dataKey="count"
-              fill="#FFDA61"
-              barSize={12}
-              shape={<CustomBar />}
-              isAnimationActive={true}
-            >
-              <LabelList
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">Workers by Category</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px] mt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={110}
+                paddingAngle={2}
                 dataKey="count"
-                position="right"
-                formatter={(value: number) => value}
-                style={{ fontWeight: 500 }}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                labelLine={false}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value: number, name: string) => [`${value} workers`, name]}
+                contentStyle={{ backgroundColor: 'white', border: '1px solid #e2e8f0' }} 
               />
-              <LabelList
-                dataKey="percentage"
-                position="right"
-                offset={40}
-                formatter={(value: number) => `${value}%`}
-                style={{ fill: "#888", fontWeight: 400 }}
-              />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          {data.map((category, index) => (
+            <div key={category.category} className="flex items-center text-sm">
+              <span
+                className="w-3 h-3 rounded-full mr-2"
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              ></span>
+              <span className="truncate">{category.category}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

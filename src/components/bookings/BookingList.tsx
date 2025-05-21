@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Booking, BookingStatus } from "@/types";
 import { BookingCard } from "./BookingCard";
@@ -10,9 +9,14 @@ import { supabase } from "@/lib/supabase";
 interface BookingListProps {
   status: BookingStatus | BookingStatus[];
   title: string;
+  serviceType?: string;
+  paymentMode?: string;
+  location?: string;
+  searchQuery?: string;
+  dateRange?: { from: string; to: string };
 }
 
-export function BookingList({ status, title }: BookingListProps) {
+export function BookingList({ status, title, serviceType, paymentMode, location, searchQuery, dateRange }: BookingListProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
