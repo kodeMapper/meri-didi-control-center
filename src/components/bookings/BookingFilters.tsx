@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,14 +35,14 @@ export function BookingFilters({
   const [localSearchQuery, setLocalSearchQuery] = useState<string>(searchQuery);
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   
-  // Service types from the ServiceType type
-  const serviceTypes: Array<ServiceType> = ["Cleaning", "Cooking", "Driving", "Sweeping", "Landscaping"];
+  // Service types
+  const serviceTypes: string[] = ["Cleaning", "Cooking", "Driving", "Sweeping", "Landscaping"];
   
   // Payment modes
-  const paymentModes: Array<PaymentMode> = ["Cash", "Online", "Card", "UPI"];
+  const paymentModes: string[] = ["Cash", "Online", "Card", "UPI"];
   
-  // Cities from the City type
-  const cities: Array<City> = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad"];
+  // Cities
+  const cities: string[] = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad"];
 
   useEffect(() => {
     setLocalDateRange(dateRange);
@@ -232,13 +233,11 @@ export function BookingFilters({
           <Badge onRemove={() => {
             setLocalDateRange({ from: '', to: '' });
             onFilterChange({
-              ...{
-                dateRange: { from: '', to: '' },
-                serviceType: localServiceType,
-                paymentMode: localPaymentMode,
-                location: localLocation,
-                searchQuery: localSearchQuery
-              }
+              dateRange: { from: '', to: '' },
+              serviceType: localServiceType,
+              paymentMode: localPaymentMode,
+              location: localLocation,
+              searchQuery: localSearchQuery
             });
           }}>
             {new Date(localDateRange.from).toLocaleDateString()} - {new Date(localDateRange.to).toLocaleDateString()}
@@ -249,13 +248,11 @@ export function BookingFilters({
           <Badge onRemove={() => {
             setLocalServiceType("all");
             onFilterChange({
-              ...{
-                dateRange: localDateRange,
-                serviceType: "all",
-                paymentMode: localPaymentMode,
-                location: localLocation,
-                searchQuery: localSearchQuery
-              }
+              dateRange: localDateRange,
+              serviceType: "all",
+              paymentMode: localPaymentMode,
+              location: localLocation,
+              searchQuery: localSearchQuery
             });
           }}>
             Service: {localServiceType}
@@ -266,13 +263,11 @@ export function BookingFilters({
           <Badge onRemove={() => {
             setLocalPaymentMode("all");
             onFilterChange({
-              ...{
-                dateRange: localDateRange,
-                serviceType: localServiceType,
-                paymentMode: "all",
-                location: localLocation,
-                searchQuery: localSearchQuery
-              }
+              dateRange: localDateRange,
+              serviceType: localServiceType,
+              paymentMode: "all",
+              location: localLocation,
+              searchQuery: localSearchQuery
             });
           }}>
             Payment: {localPaymentMode}
@@ -283,13 +278,11 @@ export function BookingFilters({
           <Badge onRemove={() => {
             setLocalLocation("all");
             onFilterChange({
-              ...{
-                dateRange: localDateRange,
-                serviceType: localServiceType,
-                paymentMode: localPaymentMode,
-                location: "all",
-                searchQuery: localSearchQuery
-              }
+              dateRange: localDateRange,
+              serviceType: localServiceType,
+              paymentMode: localPaymentMode,
+              location: "all",
+              searchQuery: localSearchQuery
             });
           }}>
             Location: {localLocation}

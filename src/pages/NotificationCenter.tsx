@@ -1,393 +1,175 @@
 
-import { useState, useEffect } from "react";
-import { Notification, NotificationType } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Bell, CalendarCheck, CheckCircle, Clock, User, Copy, Check, Search, Download } from "lucide-react";
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/supabase";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { SendNotification } from "@/components/notifications/SendNotification";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from 'react';
+import { Notification } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Bell, Check, CheckCheck } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { NotificationService } from '@/services/mockDatabase';
 
-function NotificationCenter() {
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [selectedTab, setSelectedTab] = useState<string>("unread");
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [notificationToCopy, setNotificationToCopy] = useState<string | null>(null);
-  const [isCopied, setIsCopied] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+export default function NotificationCenter() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch notifications from Supabase
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: async () => {
-      const data = await getNotifications();
-      return data;
-    }
-  });
-
-  // Calculate unread count whenever notifications change
   useEffect(() => {
-    setUnreadCount(notifications.filter(n => !n.read).length);
-  }, [notifications]);
+    // Load notifications
+    const fetchNotifications = async () => {
+      setLoading(true);
+      try {
+        const notifs = NotificationService.getAll();
+        setNotifications(notifs);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Mark notification as read mutation
-  const markAsReadMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await markNotificationAsRead(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to mark notification as read",
-        variant: "destructive",
-      });
-      console.error("Error marking notification as read:", error);
-    }
-  });
-
-  // Mark all as read mutation
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async () => {
-      return await markAllNotificationsAsRead();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast({
-        title: "All Notifications Marked as Read",
-        description: "All notifications have been marked as read.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to mark all notifications as read",
-        variant: "destructive",
-      });
-      console.error("Error marking all notifications as read:", error);
-    }
-  });
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "Worker Verified":
-        return <User className="text-green-500" />;
-      case "New Booking":
-        return <Bell className="text-primary" />;
-      case "Booking Completed":
-        return <CheckCircle className="text-blue-500" />;
-      case "New Worker Application":
-        return <User className="text-primary" />;
-      case "Payment Received":
-        return <CalendarCheck className="text-green-500" />;
-      case "Booking Cancelled":
-        return <Bell className="text-red-500" />;
-      case "General Announcement":
-        return <Bell className="text-blue-500" />;
-      case "Special Offer":
-        return <Bell className="text-yellow-500" />;
-      default:
-        return <Bell className="text-gray-500" />;
-    }
-  };
-
-  const getTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const date = new Date(timestamp);
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    const diffHours = Math.round(diffMs / 3600000);
-    const diffDays = Math.round(diffMs / 86400000);
-
-    if (diffMins < 60) {
-      return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
-    } else if (diffHours < 24) {
-      return `about ${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-    } else {
-      return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-    }
-  };
+    fetchNotifications();
+  }, []);
 
   const handleMarkAllAsRead = () => {
-    markAllAsReadMutation.mutate();
+    NotificationService.markAllAsRead();
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const handleMarkAsRead = (id: string) => {
-    markAsReadMutation.mutate(id);
+    NotificationService.markAsRead(id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
-  const copyToClipboard = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setNotificationToCopy(id);
-    setIsCopied(true);
-    
-    // Reset copied state after 2 seconds
-    setTimeout(() => {
-      setIsCopied(false);
-      setNotificationToCopy(null);
-    }, 2000);
-  };
-  
-  const handleNotificationSent = () => {
-    // Refresh notifications list
-    queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    // Switch to All Notifications tab to see the new notification
-    setSelectedTab("all");
-  };
+  const unreadCount = notifications.filter(n => !n.read).length;
 
-  const handleExport = (format: string) => {
-    // This is a basic implementation. In a real app, you'd create proper formatted files.
-    const notificationsData = JSON.stringify(notifications, null, 2);
-    const blob = new Blob([notificationsData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `notifications.${format.toLowerCase()}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Export Successful",
-      description: `Notifications exported as ${format.toUpperCase()}`
-    });
-  };
-
-  const filteredUnreadNotifications = notifications
-    .filter(n => !n.read)
-    .filter(n => 
-      searchTerm === "" || 
-      n.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (n.title && n.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      n.type.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    
-  const filteredAllNotifications = notifications
-    .filter(n => 
-      searchTerm === "" || 
-      n.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (n.title && n.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      n.type.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="w-full h-48 flex items-center justify-center">
+      <div className="flex items-center justify-center h-64">
         <p className="text-gray-500">Loading notifications...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Bell className="text-primary" size={22} />
-          <h1 className="text-2xl font-bold">Notification Center</h1>
-          {unreadCount > 0 && (
-            <span className="bg-destructive text-white text-xs px-2 py-0.5 rounded-full">
-              {unreadCount} unread
-            </span>
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Notification Center</h1>
+        {unreadCount > 0 && (
+          <Button onClick={handleMarkAllAsRead} variant="outline">
+            <CheckCheck className="mr-2 h-4 w-4" />
+            Mark All as Read
+          </Button>
+        )}
+      </div>
+
+      <Tabs defaultValue="all">
+        <TabsList className="mb-6">
+          <TabsTrigger value="all">
+            All
+            {notifications.length > 0 && (
+              <span className="ml-2 bg-gray-200 text-gray-800 text-xs px-2 py-0.5 rounded-full">
+                {notifications.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="unread">
+            Unread
+            {unreadCount > 0 && (
+              <span className="ml-2 bg-yellow-200 text-yellow-800 text-xs px-2 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all" className="space-y-4">
+          {notifications.length === 0 ? (
+            <div className="text-center py-12">
+              <Bell className="mx-auto h-12 w-12 text-gray-300" />
+              <p className="mt-2 text-gray-500">No notifications to display</p>
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkAsRead={() => handleMarkAsRead(notification.id)}
+              />
+            ))
           )}
-        </div>
-        <Button 
-          variant="outline" 
-          onClick={handleMarkAllAsRead}
-          disabled={unreadCount === 0 || markAllAsReadMutation.isPending}
-        >
-          {markAllAsReadMutation.isPending ? "Marking..." : "Mark All as Read"}
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left column - Send notification form */}
-        <div className="md:col-span-1">
-          <SendNotification onNotificationSent={handleNotificationSent} />
-        </div>
-
-        {/* Right column - Notification list */}
-        <div className="md:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-                <TabsList className="grid w-full max-w-xs grid-cols-2">
-                  <TabsTrigger value="unread" className="relative">
-                    Unread
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-xs text-white flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="all">All Notifications</TabsTrigger>
-                </TabsList>
-                
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="search"
-                      placeholder="Search notifications..."
-                      className="pl-10 w-full sm:w-[200px]"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleExport("csv")}>Export as CSV</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExport("pdf")}>Export as PDF</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExport("xlsx")}>Export as Excel</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              
-              <TabsContent value="unread" className="space-y-4">
-                {filteredUnreadNotifications.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow-sm p-12 text-center text-gray-500">
-                    {searchTerm ? "No matching unread notifications" : "No unread notifications"}
-                  </div>
-                ) : (
-                  filteredUnreadNotifications.map(notification => (
-                    <div 
-                      key={notification.id} 
-                      className="bg-white border rounded-lg shadow-sm p-4 flex border-l-4 border-primary cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleMarkAsRead(notification.id)}
-                    >
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <h3 className="font-medium text-gray-900">
-                            {notification.title || notification.type}
-                            <span 
-                              className="ml-2 text-xs text-gray-500 cursor-pointer hover:underline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(notification.id);
-                              }}
-                            >
-                              #{notification.id.substring(0, 8)}...
-                              {notificationToCopy === notification.id && isCopied && (
-                                <span className="ml-1 text-green-500">
-                                  <Check size={12} className="inline" />
-                                </span>
-                              )}
-                            </span>
-                          </h3>
-                        </div>
-                        <p className="text-gray-600">{notification.message}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Clock size={14} className="text-gray-400" />
-                          <span className="text-xs text-gray-400">
-                            {getTimeAgo(notification.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="self-start"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkAsRead(notification.id);
-                        }}
-                        disabled={markAsReadMutation.isPending}
-                      >
-                        <CheckCircle size={16} />
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </TabsContent>
-              
-              <TabsContent value="all" className="space-y-4">
-                {filteredAllNotifications.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow-sm p-12 text-center text-gray-500">
-                    {searchTerm ? "No matching notifications" : "No notifications"}
-                  </div>
-                ) : (
-                  filteredAllNotifications.map(notification => (
-                    <div 
-                      key={notification.id} 
-                      className={`bg-white border rounded-lg shadow-sm p-4 flex ${notification.read ? 'border-l' : 'border-l-4 border-primary'} hover:bg-gray-50`}
-                      onClick={() => !notification.read && handleMarkAsRead(notification.id)}
-                    >
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <h3 className="font-medium text-gray-900">
-                            {notification.title || notification.type}
-                            <span 
-                              className="ml-2 text-xs text-gray-500 cursor-pointer hover:underline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(notification.id);
-                              }}
-                            >
-                              #{notification.id.substring(0, 8)}...
-                              {notificationToCopy === notification.id && isCopied && (
-                                <span className="ml-1 text-green-500">
-                                  <Check size={12} className="inline" />
-                                </span>
-                              )}
-                            </span>
-                          </h3>
-                        </div>
-                        <p className="text-gray-600">{notification.message}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Clock size={14} className="text-gray-400" />
-                          <span className="text-xs text-gray-400">
-                            {getTimeAgo(notification.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                      {!notification.read && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="self-start"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkAsRead(notification.id);
-                          }}
-                          disabled={markAsReadMutation.isPending}
-                        >
-                          <CheckCircle size={16} />
-                        </Button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="unread" className="space-y-4">
+          {unreadCount === 0 ? (
+            <div className="text-center py-12">
+              <Check className="mx-auto h-12 w-12 text-gray-300" />
+              <p className="mt-2 text-gray-500">No unread notifications</p>
+            </div>
+          ) : (
+            notifications
+              .filter(notification => !notification.read)
+              .map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={() => handleMarkAsRead(notification.id)}
+                />
+              ))
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
-export default NotificationCenter;
+interface NotificationItemProps {
+  notification: Notification;
+  onMarkAsRead: () => void;
+}
+
+function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps) {
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'New Worker Application':
+        return 'bg-blue-100 text-blue-800';
+      case 'Worker Verified':
+        return 'bg-green-100 text-green-800';
+      case 'New Booking':
+        return 'bg-purple-100 text-purple-800';
+      case 'Booking Completed':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Payment Received':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <Card className={`p-4 ${notification.read ? 'bg-white' : 'bg-yellow-50'}`}>
+      <div className="flex justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-1 rounded ${getTypeColor(notification.type)}`}>
+              {notification.type}
+            </span>
+            {!notification.read && <span className="w-2 h-2 rounded-full bg-yellow-500"></span>}
+          </div>
+          <h3 className="font-medium mt-2">{notification.title || notification.type}</h3>
+          <p className="text-gray-600 mt-1">{notification.message}</p>
+          <p className="text-xs text-gray-400 mt-2">{formatDate(notification.createdAt)}</p>
+        </div>
+        
+        {!notification.read && (
+          <Button variant="ghost" size="sm" onClick={onMarkAsRead} className="shrink-0">
+            <Check className="mr-2 h-4 w-4" />
+            Mark as Read
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}

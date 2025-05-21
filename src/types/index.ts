@@ -1,4 +1,5 @@
 
+
 // Extend this file as needed with more type definitions
 
 export type BookingStatus = 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
@@ -28,6 +29,8 @@ export interface Booking {
   feedback?: string;
   additionalNotes?: string;
   createdAt?: string;
+  updatedAt?: string;
+  notes?: string;
 }
 
 export interface BookingFilters {
@@ -59,8 +62,10 @@ export interface Worker {
   skills?: string[];
   about?: string;
   createdAt?: string;
+  updatedAt?: string;
   gender?: string;
   dateOfBirth?: string;
+  joiningDate?: string;
 }
 
 export interface WorkerApplication {
@@ -92,7 +97,7 @@ export interface GalleryItem {
   createdAt: string;
   order: number;
   isActive: boolean;
-  mediaType?: "image" | "video";
+  mediaType: "image" | "video";
 }
 
 export interface CategoryStat {
@@ -105,20 +110,23 @@ export interface Stats {
   totalWorkers: number;
   pendingApprovals: number;
   bookingsThisWeek: number;
-  totalEarnings: number;
+  totalEarnings?: number;
   growthRates: {
     workers: number;
     bookings: number;
     earnings: number;
   };
   workersByCategory: CategoryStat[];
-  bookingTrends: {
+  bookingTrends?: {
     date: string;
     bookings: number;
   }[];
+  activeWorkers?: number;
 }
 
-export interface ServiceType {
+export type ServiceType = 'Cleaning' | 'Cooking' | 'Driving' | 'Sweeping' | 'Landscaping' | string;
+
+export interface ServiceTypeObj {
   id: string;
   name: string;
   description?: string;
@@ -136,3 +144,82 @@ export interface Notification {
   userType?: string;
   userIdentifier?: string;
 }
+
+export interface ServicePricing {
+  id: string;
+  serviceName: string;
+  category: string;
+  description?: string;
+  duration: number;
+  price: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  totalBookings?: number;
+  lastBookingDate?: string;
+  createdAt: string;
+  status: string;
+}
+
+export type City = 'Mumbai' | 'Delhi' | 'Bangalore' | 'Hyderabad' | 'Chennai' | 'Kolkata' | 'Pune' | 'Ahmedabad' | string;
+
+export type PaymentMode = 'Cash' | 'Online' | 'Card' | 'UPI' | string;
+
+export type WorkerStatus = 'Pending' | 'Active' | 'Inactive' | 'Rejected' | 'Verified';
+
+export type NotificationType = 
+  | 'New Worker Application'
+  | 'Worker Verified' 
+  | 'New Booking'
+  | 'Booking Completed'
+  | 'Payment Received'
+  | 'System'
+  | string;
+
+export type UserType = 'Admin' | 'Worker' | 'Customer' | 'All';
+
+export interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+}
+
+export type ServiceCategory = 'Cleaning' | 'Cooking' | 'Driving' | 'Sweeping' | 'Landscaping' | string;
+
+export interface ServicePlan {
+  id: string;
+  name: string;
+  description: string;
+  category: ServiceCategory;
+  price: number;
+  duration: number;
+  features: string[];
+  isPopular: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  discount: number;
+  expiresAt: string;
+  description?: string;
+  usageLimit: number;
+  usageCount?: number;
+  isActive: boolean;
+  createdAt: string;
+}
+

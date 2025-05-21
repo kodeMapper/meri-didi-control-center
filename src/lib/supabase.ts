@@ -1,12 +1,12 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { 
   Worker, 
-  Booking, 
-  ServicePricing, 
-  WorkerStatus,
+  Booking,
   Notification,
+  WorkerStatus,
   NotificationType,
-  UserType,
+  UserType
 } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
@@ -293,9 +293,8 @@ export async function getNotifications(): Promise<Notification[]> {
       title: notification.title || "",
       read: notification.read,
       createdAt: notification.created_at,
-      user_type: notification.user_type,
-      user_identifier: notification.user_identifier,
-      recipients: notification.recipients
+      userType: notification.user_type,
+      userIdentifier: notification.user_identifier
     }));
   } catch (error) {
     console.error("Error in getNotifications:", error);

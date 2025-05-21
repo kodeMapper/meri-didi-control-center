@@ -1,66 +1,11 @@
 
-import { Booking, Notification, ServicePricing, Worker, Stats, ServiceType } from "@/types";
+import { Booking, Notification, Worker, Stats, ServiceType, CategoryStat } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
 // Mock database storage
 let workers: Worker[] = [];
 let bookings: Booking[] = [];
-let servicePricing: ServicePricing[] = [];
 let notifications: Notification[] = [];
-
-// Initial mock data for service pricing
-servicePricing = [
-  {
-    id: uuidv4(),
-    serviceName: "Basic Cleaning",
-    category: "Cleaning",
-    description: "Regular home cleaning service",
-    duration: 2,
-    price: 40,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: uuidv4(),
-    serviceName: "Deep Cleaning",
-    category: "Cleaning",
-    description: "Thorough cleaning of entire home",
-    duration: 4,
-    price: 85,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: uuidv4(),
-    serviceName: "Basic Cooking",
-    category: "Cooking",
-    description: "Simple meal preparation",
-    duration: 2,
-    price: 50,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: uuidv4(),
-    serviceName: "Premium Cooking",
-    category: "Cooking",
-    description: "Gourmet meal preparation",
-    duration: 4,
-    price: 100,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: uuidv4(),
-    serviceName: "Basic Sweeping",
-    category: "Sweeping",
-    description: "Regular sweeping service",
-    duration: 1,
-    price: 30,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-];
 
 // Add more sample workers for the demo
 workers = [
@@ -180,6 +125,7 @@ bookings = [
     serviceTime: "10:47",
     amount: 40.00,
     status: "Completed",
+    notes: "Customer requested extra attention to bathroom",
     createdAt: "2025-05-07T14:30:00Z",
     updatedAt: "2025-05-08T12:47:00Z",
   },
@@ -199,6 +145,7 @@ bookings = [
     serviceTime: "05:13",
     amount: 50.00,
     status: "Completed",
+    notes: "Food allergies: nuts",
     createdAt: "2025-05-15T10:30:00Z",
     updatedAt: "2025-05-16T07:15:00Z",
   },
@@ -218,6 +165,7 @@ bookings = [
     serviceTime: "05:13",
     amount: 80.00,
     status: "Confirmed",
+    notes: "Has gardening tools",
     createdAt: "2025-05-17T09:20:00Z",
     updatedAt: "2025-05-17T10:15:00Z",
   }
@@ -268,11 +216,11 @@ const getStats = (): Stats => {
   const pendingWorkers = workers.filter(worker => worker.status === "Pending").length;
   const completedBookings = bookings.filter(booking => booking.status === "Completed").length;
   
-  // Calculate workers by category - fixing the type here
-  const workersByCategory: { category: ServiceType; count: number; percentage: number }[] = [
-    { category: "Cleaning", count: 42, percentage: 42 },
-    { category: "Cooking", count: 38, percentage: 38 },
-    { category: "Sweeping", count: 27, percentage: 27 },
+  // Calculate workers by category
+  const workersByCategory: CategoryStat[] = [
+    { name: "Cleaning", value: 42, color: "#4CAF50" },
+    { name: "Cooking", value: 38, color: "#2196F3" },
+    { name: "Sweeping", value: 27, color: "#FF9800" },
   ];
 
   return {
@@ -283,9 +231,8 @@ const getStats = (): Stats => {
     workersByCategory,
     growthRates: {
       workers: 12,
-      activeWorkers: 8,
-      pendingApprovals: 4,
       bookings: 16,
+      earnings: 8,
     }
   };
 };
@@ -296,7 +243,7 @@ export const WorkerService = {
   getById: (id: string) => workers.find(worker => worker.id === id) || null,
   getPending: () => workers.filter(worker => worker.status === "Pending"),
   getActive: () => workers.filter(worker => worker.status === "Active"),
-  getByServiceType: (serviceType: ServiceType) => workers.filter(worker => worker.serviceType === serviceType),
+  getByServiceType: (serviceType: string) => workers.filter(worker => worker.serviceType === serviceType),
   create: (worker: Omit<Worker, "id" | "createdAt" | "updatedAt" | "rating" | "totalBookings" | "completionRate" | "joiningDate">) => {
     const newWorker: Worker = {
       id: uuidv4(),
@@ -410,43 +357,6 @@ export const BookingService = {
   }
 };
 
-// Service Pricing Service
-export const PricingService = {
-  getAll: () => [...servicePricing],
-  getById: (id: string) => servicePricing.find(service => service.id === id) || null,
-  getByCategory: (category: string) => servicePricing.filter(service => service.category === category),
-  create: (service: Omit<ServicePricing, "id" | "createdAt" | "updatedAt">) => {
-    const newService: ServicePricing = {
-      id: uuidv4(),
-      ...service,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    servicePricing.push(newService);
-    return newService;
-  },
-  update: (id: string, updates: Partial<ServicePricing>) => {
-    const index = servicePricing.findIndex(service => service.id === id);
-    if (index !== -1) {
-      servicePricing[index] = {
-        ...servicePricing[index],
-        ...updates,
-        updatedAt: new Date().toISOString()
-      };
-      return servicePricing[index];
-    }
-    return null;
-  },
-  delete: (id: string) => {
-    const index = servicePricing.findIndex(service => service.id === id);
-    if (index !== -1) {
-      servicePricing.splice(index, 1);
-      return true;
-    }
-    return false;
-  }
-};
-
 // Notification Service
 export const NotificationService = {
   getAll: () => [...notifications].sort((a, b) => 
@@ -486,7 +396,6 @@ export const StatsService = {
 export const MockDatabase = {
   WorkerService,
   BookingService,
-  PricingService,
   NotificationService,
   StatsService
 };
