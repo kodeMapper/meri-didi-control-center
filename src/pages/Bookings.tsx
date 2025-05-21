@@ -140,6 +140,7 @@ export default function Bookings() {
               title="Pending Orders"
               dateRange={dateRange}
               filters={{
+                dateRange: dateRange,
                 serviceType,
                 paymentMode,
                 location,
@@ -154,6 +155,7 @@ export default function Bookings() {
               title="Confirmed Orders"
               dateRange={dateRange}
               filters={{
+                dateRange: dateRange,
                 serviceType,
                 paymentMode,
                 location,
@@ -168,6 +170,7 @@ export default function Bookings() {
               title="Completed Orders"
               dateRange={dateRange}
               filters={{
+                dateRange: dateRange,
                 serviceType,
                 paymentMode,
                 location,
@@ -182,6 +185,7 @@ export default function Bookings() {
               title="Refund Requests"
               dateRange={dateRange}
               filters={{
+                dateRange: dateRange,
                 serviceType,
                 paymentMode,
                 location,
