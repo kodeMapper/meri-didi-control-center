@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,7 +37,10 @@ export interface BookingListProps {
 }
 
 export function BookingList({ status, title, dateRange, filters }: BookingListProps) {
-  const [bookings, setBookings] = useState<Booking[]>(BookingService.getByStatus(status));
+  // Since getByStatus doesn't exist, we'll filter from getAll() manually
+  const [bookings, setBookings] = useState<Booking[]>(
+    BookingService.getAll().filter(booking => booking.status === status)
+  );
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState("");
   
@@ -244,8 +248,8 @@ export function BookingList({ status, title, dateRange, filters }: BookingListPr
       )}
       
       <LocationMapDialog 
-        isOpen={isMapOpen} 
-        onClose={() => setIsMapOpen(false)} 
+        open={isMapOpen} 
+        onOpenChange={setIsMapOpen} 
         address={selectedAddress} 
       />
     </div>
