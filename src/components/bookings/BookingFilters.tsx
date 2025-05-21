@@ -1,246 +1,328 @@
 
-import { useState } from "react";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ServiceType, City } from "@/types";
-import { Search, Calendar, MapPin, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { City, ServiceType, PaymentMode, BookingFilters } from "@/types";
+import { Search, X, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
 
 interface BookingFiltersProps {
-  onFilterChange: (filters: BookingFilters) => void;
-}
-
-export interface BookingFilters {
-  search: string;
+  dateRange: { from: string; to: string };
   serviceType: string;
-  city: string;
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
+  paymentMode: string;
+  location: string;
+  searchQuery: string;
+  onFilterChange: (filters: BookingFilters) => void;
+  onSearch: (query: string) => void;
 }
 
-export function BookingFilters({ onFilterChange }: BookingFiltersProps) {
-  const [search, setSearch] = useState("");
-  const [serviceType, setServiceType] = useState("");
-  const [city, setCity] = useState("");
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+export function BookingFilters({ 
+  dateRange, 
+  serviceType,
+  paymentMode,
+  location,
+  searchQuery,
+  onFilterChange,
+  onSearch
+}: BookingFiltersProps) {
+  const [localDateRange, setLocalDateRange] = useState<{ from: string, to: string }>(dateRange);
+  const [localServiceType, setLocalServiceType] = useState<string>(serviceType);
+  const [localPaymentMode, setLocalPaymentMode] = useState<string>(paymentMode);
+  const [localLocation, setLocalLocation] = useState<string>(location);
+  const [localSearchQuery, setLocalSearchQuery] = useState<string>(searchQuery);
+  const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
+  
+  // Service types from the ServiceType type
+  const serviceTypes: Array<ServiceType> = ["Cleaning", "Cooking", "Driving", "Sweeping", "Landscaping"];
+  
+  // Payment modes
+  const paymentModes: Array<PaymentMode> = ["Cash", "Online", "Card", "UPI"];
+  
+  // Cities from the City type
+  const cities: Array<City> = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad"];
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    updateFilters({ search: e.target.value });
-  };
+  useEffect(() => {
+    setLocalDateRange(dateRange);
+    setLocalServiceType(serviceType);
+    setLocalPaymentMode(paymentMode);
+    setLocalLocation(location);
+    setLocalSearchQuery(searchQuery);
+  }, [dateRange, serviceType, paymentMode, location, searchQuery]);
 
-  const handleServiceTypeChange = (value: string) => {
-    setServiceType(value);
-    updateFilters({ serviceType: value });
-  };
-
-  const handleCityChange = (value: string) => {
-    setCity(value);
-    updateFilters({ city: value });
-  };
-
-  const handleDateFromChange = (date: Date | undefined) => {
-    setDateFrom(date);
-    updateFilters({ dateFrom: date });
-  };
-
-  const handleDateToChange = (date: Date | undefined) => {
-    setDateTo(date);
-    updateFilters({ dateTo: date });
-  };
-
-  const updateFilters = (newFilters: Partial<BookingFilters>) => {
+  const handleApplyFilters = () => {
     onFilterChange({
-      search,
-      serviceType,
-      city,
-      dateFrom,
-      dateTo,
-      ...newFilters
-    });
-  };
-
-  const resetFilters = () => {
-    setSearch("");
-    setServiceType("");
-    setCity("");
-    setDateFrom(undefined);
-    setDateTo(undefined);
-    onFilterChange({
-      search: "",
-      serviceType: "",
-      city: "",
-      dateFrom: undefined,
-      dateTo: undefined
+      dateRange: localDateRange,
+      serviceType: localServiceType,
+      paymentMode: localPaymentMode,
+      location: localLocation,
+      searchQuery: localSearchQuery
     });
     setIsFiltersOpen(false);
   };
 
+  const handleResetFilters = () => {
+    const resetFilters = {
+      dateRange: { from: "", to: "" },
+      serviceType: "all",
+      paymentMode: "all",
+      location: "all",
+      searchQuery: ""
+    };
+    
+    setLocalDateRange(resetFilters.dateRange);
+    setLocalServiceType(resetFilters.serviceType);
+    setLocalPaymentMode(resetFilters.paymentMode);
+    setLocalLocation(resetFilters.location);
+    setLocalSearchQuery("");
+    
+    onFilterChange(resetFilters);
+    onSearch("");
+    setIsFiltersOpen(false);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch(localSearchQuery);
+  };
+
+  const handleDateChange = (field: 'from' | 'to', value: string) => {
+    setLocalDateRange(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-6 space-y-4">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+    <div>
+      <form onSubmit={handleSearch} className="flex items-center gap-2 mb-4">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
           <Input
-            placeholder="Search by customer or worker name, ID..."
-            value={search}
-            onChange={handleSearchChange}
-            className="pl-10"
+            placeholder="Search bookings by customer name, worker, service..."
+            className="pl-10 pr-20 w-full"
+            value={localSearchQuery}
+            onChange={e => setLocalSearchQuery(e.target.value)}
           />
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
+          {localSearchQuery && (
+            <button 
+              type="button" 
+              className="absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => {
+                setLocalSearchQuery("");
+                onSearch("");
+              }}
+            >
+              <X size={16} />
+            </button>
+          )}
           <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter size={16} />
-                <span>Filters</span>
+              <Button 
+                variant="ghost" 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2"
+                type="button"
+              >
+                <Filter size={18} />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-4" align="end">
+            <PopoverContent className="w-[350px] md:w-[500px] lg:w-[600px] p-4" align="end">
               <div className="space-y-4">
+                <h3 className="font-medium">Filter Bookings</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fromDate">From Date</Label>
+                    <Input
+                      id="fromDate"
+                      type="date"
+                      value={localDateRange.from}
+                      onChange={e => handleDateChange('from', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="toDate">To Date</Label>
+                    <Input
+                      id="toDate"
+                      type="date"
+                      value={localDateRange.to}
+                      onChange={e => handleDateChange('to', e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="serviceType">Service Type</Label>
+                    <Select 
+                      value={localServiceType} 
+                      onValueChange={setLocalServiceType}
+                    >
+                      <SelectTrigger id="serviceType">
+                        <SelectValue placeholder="All Service Types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Service Types</SelectItem>
+                        {serviceTypes.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="paymentMode">Payment Mode</Label>
+                    <Select 
+                      value={localPaymentMode} 
+                      onValueChange={setLocalPaymentMode}
+                    >
+                      <SelectTrigger id="paymentMode">
+                        <SelectValue placeholder="All Payment Modes" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Payment Modes</SelectItem>
+                        {paymentModes.map((mode) => (
+                          <SelectItem key={mode} value={mode}>{mode}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Service Type</label>
-                  <Select value={serviceType} onValueChange={handleServiceTypeChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Services" />
+                  <Label htmlFor="location">Location</Label>
+                  <Select 
+                    value={localLocation} 
+                    onValueChange={setLocalLocation}
+                  >
+                    <SelectTrigger id="location">
+                      <SelectValue placeholder="All Locations" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Services</SelectItem>
-                      <SelectItem value="Cleaning">Cleaning</SelectItem>
-                      <SelectItem value="Cooking">Cooking</SelectItem>
-                      <SelectItem value="Driving">Driving</SelectItem>
-                      <SelectItem value="Sweeping">Sweeping</SelectItem>
-                      <SelectItem value="Landscaping">Landscaping</SelectItem>
+                      <SelectItem value="all">All Locations</SelectItem>
+                      {cities.map((city) => (
+                        <SelectItem key={city} value={city}>{city}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">City</label>
-                  <Select value={city} onValueChange={handleCityChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Cities" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Cities</SelectItem>
-                      <SelectItem value="Mumbai">Mumbai</SelectItem>
-                      <SelectItem value="Delhi">Delhi</SelectItem>
-                      <SelectItem value="Bangalore">Bangalore</SelectItem>
-                      <SelectItem value="Hyderabad">Hyderabad</SelectItem>
-                      <SelectItem value="Chennai">Chennai</SelectItem>
-                      <SelectItem value="Kolkata">Kolkata</SelectItem>
-                      <SelectItem value="Pune">Pune</SelectItem>
-                      <SelectItem value="Ahmedabad">Ahmedabad</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date From</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {dateFrom ? format(dateFrom, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={dateFrom}
-                        onSelect={handleDateFromChange}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date To</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {dateTo ? format(dateTo, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={dateTo}
-                        onSelect={handleDateToChange}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={resetFilters}>Reset</Button>
-                  <Button onClick={() => setIsFiltersOpen(false)}>Apply</Button>
+                <div className="flex justify-between pt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={handleResetFilters}
+                  >
+                    Reset Filters
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={handleApplyFilters}
+                  >
+                    Apply Filters
+                  </Button>
                 </div>
               </div>
             </PopoverContent>
           </Popover>
         </div>
-      </div>
+      </form>
       
-      {(serviceType || city || dateFrom || dateTo) && (
-        <div className="flex flex-wrap gap-2 pt-2">
-          {serviceType && (
-            <div className="inline-flex items-center gap-1 text-xs bg-gray-100 rounded-full px-3 py-1">
-              <span>Service: {serviceType}</span>
-              <button onClick={() => handleServiceTypeChange("")} className="text-gray-500 hover:text-gray-700">×</button>
-            </div>
-          )}
-          {city && (
-            <div className="inline-flex items-center gap-1 text-xs bg-gray-100 rounded-full px-3 py-1">
-              <span>City: {city}</span>
-              <button onClick={() => handleCityChange("")} className="text-gray-500 hover:text-gray-700">×</button>
-            </div>
-          )}
-          {dateFrom && (
-            <div className="inline-flex items-center gap-1 text-xs bg-gray-100 rounded-full px-3 py-1">
-              <span>From: {format(dateFrom, "PP")}</span>
-              <button onClick={() => handleDateFromChange(undefined)} className="text-gray-500 hover:text-gray-700">×</button>
-            </div>
-          )}
-          {dateTo && (
-            <div className="inline-flex items-center gap-1 text-xs bg-gray-100 rounded-full px-3 py-1">
-              <span>To: {format(dateTo, "PP")}</span>
-              <button onClick={() => handleDateToChange(undefined)} className="text-gray-500 hover:text-gray-700">×</button>
-            </div>
-          )}
-          {(serviceType || city || dateFrom || dateTo) && (
-            <button
-              onClick={resetFilters}
-              className="text-xs text-blue-600 hover:text-blue-800 underline"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {localDateRange.from && localDateRange.to && (
+          <Badge onRemove={() => {
+            setLocalDateRange({ from: '', to: '' });
+            onFilterChange({
+              ...{
+                dateRange: { from: '', to: '' },
+                serviceType: localServiceType,
+                paymentMode: localPaymentMode,
+                location: localLocation,
+                searchQuery: localSearchQuery
+              }
+            });
+          }}>
+            {new Date(localDateRange.from).toLocaleDateString()} - {new Date(localDateRange.to).toLocaleDateString()}
+          </Badge>
+        )}
+        
+        {localServiceType !== "all" && (
+          <Badge onRemove={() => {
+            setLocalServiceType("all");
+            onFilterChange({
+              ...{
+                dateRange: localDateRange,
+                serviceType: "all",
+                paymentMode: localPaymentMode,
+                location: localLocation,
+                searchQuery: localSearchQuery
+              }
+            });
+          }}>
+            Service: {localServiceType}
+          </Badge>
+        )}
+        
+        {localPaymentMode !== "all" && (
+          <Badge onRemove={() => {
+            setLocalPaymentMode("all");
+            onFilterChange({
+              ...{
+                dateRange: localDateRange,
+                serviceType: localServiceType,
+                paymentMode: "all",
+                location: localLocation,
+                searchQuery: localSearchQuery
+              }
+            });
+          }}>
+            Payment: {localPaymentMode}
+          </Badge>
+        )}
+        
+        {localLocation !== "all" && (
+          <Badge onRemove={() => {
+            setLocalLocation("all");
+            onFilterChange({
+              ...{
+                dateRange: localDateRange,
+                serviceType: localServiceType,
+                paymentMode: localPaymentMode,
+                location: "all",
+                searchQuery: localSearchQuery
+              }
+            });
+          }}>
+            Location: {localLocation}
+          </Badge>
+        )}
+        
+        {(localDateRange.from || localServiceType !== "all" || localPaymentMode !== "all" || localLocation !== "all") && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-7 text-xs"
+            onClick={handleResetFilters}
+          >
+            Clear All
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface BadgeProps {
+  children: React.ReactNode;
+  onRemove: () => void;
+}
+
+function Badge({ children, onRemove }: BadgeProps) {
+  return (
+    <div className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+      {children}
+      <button type="button" onClick={onRemove} className="text-gray-500 hover:text-gray-700">
+        <X size={14} />
+      </button>
     </div>
   );
 }

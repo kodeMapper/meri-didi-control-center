@@ -7,6 +7,7 @@ import {
   Check,
   ChevronDown,
   Download,
+  Edit,
   Filter,
   MoreHorizontal,
   Plus,
@@ -47,6 +48,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pagination } from "@/components/ui/pagination";
 

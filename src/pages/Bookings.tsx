@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingList } from "@/components/bookings/BookingList";
 import { BookingFilters } from "@/components/bookings/BookingFilters";
 import { Button } from "@/components/ui/button";
 import { Download, Plus, RefreshCw } from "lucide-react";
-import { BookingFilters as BookingFiltersType } from "@/types";
+import { BookingFilters as BookingFiltersType, BookingStatus } from "@/types";
 
 export default function Bookings() {
   const [activeTab, setActiveTab] = useState<string>("pending");

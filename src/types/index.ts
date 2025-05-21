@@ -188,7 +188,7 @@ export interface Slider {
 }
 
 export interface BookingFilters {
-  dateRange: { from: string, to: string };
+  dateRange: { from: string; to: string };
   serviceType: string;
   paymentMode: string;
   location: string;
