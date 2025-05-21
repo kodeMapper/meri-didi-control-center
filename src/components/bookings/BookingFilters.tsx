@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,7 @@ interface BookingFiltersProps {
   paymentMode: string;
   location: string;
   searchQuery: string;
-  onFilterChange: (filters: BookingFilters) => void;
+  onFilterChange: (filters: BookingFiltersType) => void;
   onSearch: (query: string) => void;
 }
 
