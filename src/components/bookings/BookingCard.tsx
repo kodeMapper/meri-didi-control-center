@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Booking } from "@/types";
 import { 
@@ -38,9 +37,10 @@ interface BookingCardProps {
   booking: Booking;
   onViewDetails: (booking: Booking) => void;
   onDeleted: () => void;
+  onViewLocation?: (address: string) => void; // Added this prop
 }
 
-export function BookingCard({ booking, onViewDetails, onDeleted }: BookingCardProps) {
+export function BookingCard({ booking, onViewDetails, onDeleted, onViewLocation }: BookingCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletionReason, setDeletionReason] = useState("");
@@ -288,7 +288,12 @@ export function BookingCard({ booking, onViewDetails, onDeleted }: BookingCardPr
                   <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
                   <div className="text-sm">{booking.customerAddress || "No address provided"}</div>
                 </div>
-                <Button variant="outline" size="sm" className="mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => onViewLocation?.(booking.customerAddress || "")}
+                >
                   <MapPin size={14} className="mr-1" />
                   View on Map
                 </Button>

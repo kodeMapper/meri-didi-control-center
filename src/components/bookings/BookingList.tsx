@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { BookingCard } from "@/components/bookings/BookingCard";
 import { Button } from "@/components/ui/button";
-import { Booking, BookingFiltersType } from "@/types";
+import { Booking, BookingFilters } from "@/types";
 import { LocationMapDialog } from "@/components/bookings/LocationMapDialog";
 import { BookingService } from "@/services/mockDatabase";
 
@@ -10,7 +10,7 @@ interface BookingListProps {
   status: "Pending" | "Confirmed" | "Completed" | "Cancelled";
   title: string;
   dateRange?: { from: string; to: string };
-  filters?: BookingFiltersType;
+  filters?: BookingFilters;
 }
 
 export function BookingList({ status, title, dateRange, filters }: BookingListProps) {
@@ -55,9 +55,10 @@ export function BookingList({ status, title, dateRange, filters }: BookingListPr
             result = result.filter(booking => booking.paymentMode === filters.paymentMode);
           }
           
-          // Apply location filter
+          // Apply location filter - using customerAddress instead of location
           if (filters && filters.location && filters.location !== "all") {
-            result = result.filter(booking => booking.location === filters.location);
+            result = result.filter(booking => booking.customerAddress && 
+              booking.customerAddress.toLowerCase().includes(filters.location.toLowerCase()));
           }
           
           // Apply search query
@@ -140,6 +141,8 @@ export function BookingList({ status, title, dateRange, filters }: BookingListPr
           <BookingCard
             key={booking.id}
             booking={booking}
+            onViewDetails={() => {}} // This is a required prop in BookingCardProps
+            onDeleted={() => {}} // This is a required prop in BookingCardProps
             onViewLocation={handleViewLocation}
           />
         ))}
