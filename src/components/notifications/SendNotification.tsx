@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,11 +73,11 @@ export function SendNotification({ onNotificationSent }: SendNotificationProps) 
           break;
         case "workers":
           recipients = "workers";
-          user_type = "worker";
+          user_type = "Worker";
           break;
         case "customers":
           recipients = "customers";
-          user_type = "customer";
+          user_type = "Customer";
           break;
         case "specific":
           recipients = specificRecipient;

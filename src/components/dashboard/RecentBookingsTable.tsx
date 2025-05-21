@@ -70,7 +70,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
             message: `Booking #${selectedBooking.id.substring(0, 8)} has been cancelled. Reason: ${deletionReason}`,
             title: "Booking Cancelled",
             read: false,
-            user_type: "worker",
+            user_type: "Worker",
             user_identifier: selectedBooking.workerId
           });
         }
@@ -81,7 +81,7 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
           message: `Your booking for ${selectedBooking.serviceName} on ${selectedBooking.serviceDate} has been cancelled. Reason: ${deletionReason}`,
           title: "Booking Cancelled",
           read: false,
-          user_type: "customer",
+          user_type: "Customer",
           user_identifier: selectedBooking.customerId
         });
         

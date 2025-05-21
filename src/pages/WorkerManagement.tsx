@@ -139,7 +139,7 @@ function WorkerManagement() {
         message: "Your profile has been activated. You can now receive bookings.",
         title: "Profile Activated",
         read: false,
-        user_type: "worker",
+        user_type: "Worker",
         user_identifier: id
       });
       
@@ -177,7 +177,7 @@ function WorkerManagement() {
         message: "Your profile has been deactivated. You will not receive new bookings until your profile is activated again.",
         title: "Profile Deactivated",
         read: false,
-        user_type: "worker",
+        user_type: "Worker",
         user_identifier: id
       });
       
@@ -215,7 +215,7 @@ function WorkerManagement() {
         message: "Congratulations! Your application has been approved. You are now part of our team.",
         title: "Application Approved",
         read: false,
-        user_type: "worker",
+        user_type: "Worker",
         user_identifier: workerId
       });
       
@@ -253,7 +253,7 @@ function WorkerManagement() {
         message: "We regret to inform you that your application has been rejected. Thank you for your interest.",
         title: "Application Rejected",
         read: false,
-        user_type: "worker",
+        user_type: "Worker",
         user_identifier: workerId
       });
       
