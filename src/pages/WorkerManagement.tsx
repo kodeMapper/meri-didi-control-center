@@ -480,11 +480,31 @@ function WorkerManagement() {
       </div>
 
       <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-4">
-          <TabsTrigger value="active">Active Workers</TabsTrigger>
-          <TabsTrigger value="inactive">Inactive Workers</TabsTrigger>
-          <TabsTrigger value="pending">Pending Applications</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected Applications</TabsTrigger>
+        <TabsList className="mb-4 flex gap-2 bg-yellow-100 rounded-full p-1 shadow-inner">
+          <TabsTrigger
+            value="active"
+            className="rounded-full px-5 py-2 font-semibold data-[state=active]:bg-yellow-400 data-[state=active]:text-white transition"
+          >
+            Active Workers
+          </TabsTrigger>
+          <TabsTrigger
+            value="inactive"
+            className="rounded-full px-5 py-2 font-semibold data-[state=active]:bg-yellow-400 data-[state=active]:text-white transition"
+          >
+            Inactive Workers
+          </TabsTrigger>
+          <TabsTrigger
+            value="pending"
+            className="rounded-full px-5 py-2 font-semibold data-[state=active]:bg-yellow-400 data-[state=active]:text-white transition"
+          >
+            Pending Applications
+          </TabsTrigger>
+          <TabsTrigger
+            value="rejected"
+            className="rounded-full px-5 py-2 font-semibold data-[state=active]:bg-red-400 data-[state=active]:text-white transition"
+          >
+            Rejected Applications
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="active" className="space-y-4">
