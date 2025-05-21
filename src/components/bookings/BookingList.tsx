@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { BookingCard } from "@/components/bookings/BookingCard";
 import { Button } from "@/components/ui/button";

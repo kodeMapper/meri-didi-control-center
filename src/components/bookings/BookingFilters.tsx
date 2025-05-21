@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { City, ServiceType, PaymentMode } from "@/types";
-import type { BookingFilters as BookingFiltersType } from "@/types";
+import { CITIES, ServiceType, PaymentMode, BookingFilters as BookingFiltersType } from "@/types";
 import { Search, X, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -36,13 +34,13 @@ export function BookingFilters({
   const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
   
   // Service types
-  const serviceTypes: string[] = ["Cleaning", "Cooking", "Driving", "Sweeping", "Landscaping"];
+  const serviceTypes: ServiceType[] = ["Cleaning", "Cooking", "Driving", "Sweeping", "Landscaping"];
   
   // Payment modes
-  const paymentModes: string[] = ["Cash", "Online", "Card", "UPI"];
+  const paymentModes: PaymentMode[] = ["Cash", "Online", "Wallet", "Card", "UPI"];
   
   // Cities
-  const cities: string[] = ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad"];
+  const cities = CITIES;
 
   useEffect(() => {
     setLocalDateRange(dateRange);

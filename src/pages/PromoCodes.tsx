@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { PromoCode } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -11,26 +10,26 @@ import { Edit2, Trash2, Plus, Percent, Tag } from 'lucide-react';
 export default function PromoCodes() {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([
     {
-      id: '1',
-      code: 'WELCOME2025',
+      id: "1",
+      code: "WELCOME20",
       discount: 20,
-      expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
-      description: 'Welcome discount for new users',
-      usageLimit: 100,
-      usageCount: 42,
+      expiresAt: "2025-12-31T23:59:59Z",
       isActive: true,
-      createdAt: new Date().toISOString()
+      usageLimit: 100,
+      usedCount: 42,
+      createdAt: "2025-01-01T00:00:00Z",
+      description: "20% off for new customers"
     },
     {
-      id: '2',
-      code: 'SUMMER25',
+      id: "2",
+      code: "SUMMER25",
       discount: 25,
-      expiresAt: new Date(new Date().setMonth(new Date().getMonth() + 2)).toISOString(),
-      description: 'Summer special discount',
-      usageLimit: 200,
-      usageCount: 85,
+      expiresAt: "2025-06-30T23:59:59Z",
       isActive: true,
-      createdAt: new Date().toISOString()
+      usageLimit: 50,
+      usedCount: 12,
+      createdAt: "2025-05-01T00:00:00Z",
+      description: "Summer special discount"
     }
   ]);
 
@@ -105,7 +104,7 @@ interface PromoCodeCardProps {
 
 function PromoCodeCard({ promoCode }: PromoCodeCardProps) {
   const isExpired = new Date(promoCode.expiresAt) < new Date();
-  const usagePercentage = (promoCode.usageCount || 0) / promoCode.usageLimit * 100;
+  const usagePercentage = (promoCode.usedCount || 0) / promoCode.usageLimit * 100;
   
   return (
     <Card className={`p-4 ${isExpired ? 'bg-gray-50' : ''}`}>
@@ -128,7 +127,7 @@ function PromoCodeCard({ promoCode }: PromoCodeCardProps) {
         <div className="flex justify-between">
           <span>Usage:</span>
           <span>
-            {promoCode.usageCount || 0}/{promoCode.usageLimit}
+            {promoCode.usedCount} / {promoCode.usageLimit}
           </span>
         </div>
         

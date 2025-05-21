@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Booking } from "@/types";
 import { Button } from "@/components/ui/button";

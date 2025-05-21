@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Customer, City } from '@/types';
+import { Customer, CITIES } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +22,7 @@ export default function CustomerManagement() {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editFormData, setEditFormData] = useState<Partial<Customer>>({});
 
-  const cities: City[] = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata'];
+  const cities = CITIES;
   const statuses = ['Active', 'Inactive', 'Pending'];
 
   useEffect(() => {
@@ -402,7 +401,7 @@ export default function CustomerManagement() {
             <div>
               <Label htmlFor="city">City</Label>
               <Select 
-                value={editFormData.city || ''} 
+                value={editFormData.city as string || ''} 
                 onValueChange={(value) => handleSelectChange('city', value)}
               >
                 <SelectTrigger id="city">

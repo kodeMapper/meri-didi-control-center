@@ -26,13 +26,14 @@ export type NotificationType =
   | "Profile Activated"
   | "Profile Deactivated"
   | "Application Approved"
-  | "Application Rejected";
+  | "Application Rejected"
+  | "Booking Cancelled";  // Added this missing notification type
 
 export type PaymentStatus = "Pending" | "Paid" | "Failed" | "Refunded";
 
 export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 
-export type PaymentMode = "Cash" | "Online" | "Wallet";
+export type PaymentMode = "Cash" | "Online" | "Wallet" | "Card" | "UPI";
 
 export interface Worker {
   id: string;
@@ -70,6 +71,8 @@ export interface Booking {
   customerAddress: string;
   workerId: string;
   workerName: string;
+  workerEmail?: string; // Added missing property
+  workerPhone?: string; // Added missing property
   serviceType: ServiceType;
   serviceName: string;
   serviceDuration: number;
@@ -78,6 +81,8 @@ export interface Booking {
   amount: number;
   status: BookingStatus;
   notes?: string;
+  additionalNotes?: string; // Added missing property
+  paymentMode?: PaymentMode; // Added missing property
   feedback: string;
   rating: number;
   createdAt: string;
@@ -102,13 +107,27 @@ export interface CategoryStat {
   color: string;
 }
 
+// Adding this missing interface
+export interface Stats {
+  workers: number;
+  bookings: number;
+  earnings: number;
+  activeWorkers?: number;
+}
+
 export interface City {
   name: string;
   totalWorkers: number;
   activeWorkers: number;
 }
 
-export type City = "Mumbai" | "Delhi" | "Bangalore" | "Hyderabad" | "Chennai" | "Kolkata" | "Pune" | "Ahmedabad";
+// Change City type to string array
+export const CITIES = [
+  "Mumbai", "Delhi", "Bangalore", "Hyderabad", 
+  "Chennai", "Kolkata", "Pune", "Ahmedabad"
+] as const;
+
+export type City = typeof CITIES[number];
 
 export interface Customer {
   id: string;
@@ -140,7 +159,7 @@ export interface PromoCode {
   expiresAt: string;
   isActive: boolean;
   usageLimit: number;
-  usedCount: number;
+  usedCount: number;  // This is the correct property name
   createdAt: string;
   description?: string;
 }
@@ -165,7 +184,16 @@ export interface GalleryItem {
   type: "image" | "video";
   url: string;
   thumbnail?: string;
-  category: "customer" | "worker";
+  category: "customer" | "worker" | "Customer Testimonial" | "Worker Testimonial" | "Service Showcase";  // Updated to include all used category types
   createdAt: string;
   featured: boolean;
+}
+
+// Adding the missing BookingFilters interface
+export interface BookingFilters {
+  dateRange: { from: string; to: string };
+  serviceType: string;
+  paymentMode: string;
+  location: string;
+  searchQuery: string;
 }

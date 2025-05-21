@@ -66,22 +66,22 @@ export function RecentBookingsTable({ bookings }: RecentBookingsTableProps) {
         // Send notification to worker
         if (selectedBooking.workerId) {
           await addNotification({
-            type: "Booking Cancelled",
+            type: "Booking Cancelled", // Changed to match NotificationType in types.ts
             message: `Booking #${selectedBooking.id.substring(0, 8)} has been cancelled. Reason: ${deletionReason}`,
             title: "Booking Cancelled",
             read: false,
-            user_type: "Worker",
+            user_type: "Worker", // Proper case as defined in UserType
             user_identifier: selectedBooking.workerId
           });
         }
         
         // Send notification to customer
         await addNotification({
-          type: "Booking Cancelled",
+          type: "Booking Cancelled", // Changed to match NotificationType in types.ts
           message: `Your booking for ${selectedBooking.serviceName} on ${selectedBooking.serviceDate} has been cancelled. Reason: ${deletionReason}`,
           title: "Booking Cancelled",
           read: false,
-          user_type: "Customer",
+          user_type: "Customer", // Proper case as defined in UserType
           user_identifier: selectedBooking.customerId
         });
         
