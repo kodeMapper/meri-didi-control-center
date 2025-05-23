@@ -26,6 +26,45 @@
   animation: fadein 1s;
 }
 
+/* Sidebar animation styles */
+.sidebar-icon {
+  transition: transform 0.2s ease;
+}
+.sidebar-icon:hover {
+  transform: scale(1.15);
+}
+
+.sidebar-tooltip {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.sidebar-tooltip-visible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.sidebar-item {
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background-color: rgba(253, 224, 71, 0.2);
+  transition: width 0.3s ease;
+  z-index: -1;
+}
+.sidebar-item:hover::after {
+  width: 100%;
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
