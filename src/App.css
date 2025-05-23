@@ -19,11 +19,80 @@
 .legend-animate > div:nth-child(2) { animation-delay: 0.2s; }
 .legend-animate > div:nth-child(3) { animation-delay: 0.3s; }
 .legend-animate > div:nth-child(4) { animation-delay: 0.4s; }
+.legend-animate > div:nth-child(5) { animation-delay: 0.5s; }
+.legend-animate > div:nth-child(6) { animation-delay: 0.6s; }
+
+/* Modern Animation Classes */
 @keyframes fadein {
+  from { opacity: 0; }
   to { opacity: 1; }
 }
+
+@keyframes slide-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-right {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse-slow {
+  0% { opacity: 0.85; }
+  50% { opacity: 1; }
+  100% { opacity: 0.85; }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes wave {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-3px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(3px); }
+  100% { transform: translateY(0); }
+}
+
+/* Animation Classes */
 .animate-fadein {
   animation: fadein 1s;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+.animate-slide-right {
+  animation: slide-right 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s infinite;
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 2s infinite;
+}
+
+.animate-wave {
+  animation: wave 3s infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-slow 3s infinite;
 }
 
 /* Sidebar animation styles */
@@ -106,4 +175,48 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-slow 3s infinite;
+}
+
+/* Tooltip and chart visibility fixes */
+.custom-tooltip {
+  z-index: 99999 !important;
+  position: relative !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  pointer-events: none !important;
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 99999 !important;
+  position: relative !important;
+  pointer-events: none !important;
+}
+
+.recharts-wrapper {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.recharts-surface {
+  overflow: visible !important;
+}
+
+/* Ensure pie chart container doesn't clip tooltips */
+.pie-chart-container {
+  position: relative;
+  overflow: visible !important;
+}
+
+.pie-chart-container .recharts-wrapper {
+  overflow: visible !important;
+}
+
+/* Fix for all chart containers */
+.recharts-responsive-container {
+  position: relative !important;
+  overflow: visible !important;
 }
