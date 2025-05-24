@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bell, RefreshCw, Search, User } from "lucide-react";
+import { Bell, RefreshCw, Search, User, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -8,6 +8,14 @@ import { NotificationService } from "@/services/mockDatabase";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const [isSearching, setIsSearching] = useState(false);
@@ -15,6 +23,7 @@ export function Header() {
   const unreadNotifications = NotificationService.getUnread().length;
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleRefresh = () => {
     // In a real app this would refresh data from the server
@@ -35,6 +44,14 @@ export function Header() {
       // For now just clear the search
       setSearchQuery("");
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
   };
 
   return (
@@ -85,19 +102,30 @@ export function Header() {
             </span>
           )}
         </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="rounded-full" 
-          onClick={() => navigate("/settings")}
-        >
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-yellow-100 text-yellow-800">
-              A
-            </AvatarFallback>
-          </Avatar>
-        </Button>
-        <span className="font-medium text-sm hidden md:block">Admin</span>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-2 px-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-yellow-100 text-yellow-800">
+                  A
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-sm hidden md:block">Admin</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              <User className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

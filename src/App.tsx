@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "./components/layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import WorkerManagement from "./pages/WorkerManagement";
@@ -27,33 +29,37 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/worker-management" element={<WorkerManagement />} />
-            <Route path="/pricing" element={<PricingManagement />} />
-            <Route path="/bookings" element={<Bookings />} />
-            <Route path="/completed-services" element={<CompletedServices />} />
-            <Route path="/notifications" element={<NotificationCenter />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/worker-registration" element={<WorkerRegistration />} />
-            <Route path="/worker-profile/:id" element={<WorkerProfilePage />} />
-            <Route path="/slider-management" element={<SliderManagement />} />
-            <Route path="/promo-codes" element={<PromoCodes />} />
-            <Route path="/customer-management" element={<CustomerManagement />} />
-            <Route path="/subscriptions" element={<Subscriptions />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/faq-management" element={<FAQManagement />} />
-            <Route path="/system-settings" element={<SystemSettings />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ProtectedRoute>
+            <Routes>
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/worker-management" element={<WorkerManagement />} />
+                <Route path="/pricing" element={<PricingManagement />} />
+                <Route path="/bookings" element={<Bookings />} />
+                <Route path="/completed-services" element={<CompletedServices />} />
+                <Route path="/notifications" element={<NotificationCenter />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/worker-registration" element={<WorkerRegistration />} />
+                <Route path="/worker-profile/:id" element={<WorkerProfilePage />} />
+                <Route path="/slider-management" element={<SliderManagement />} />
+                <Route path="/promo-codes" element={<PromoCodes />} />
+                <Route path="/customer-management" element={<CustomerManagement />} />
+                <Route path="/subscriptions" element={<Subscriptions />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/faq-management" element={<FAQManagement />} />
+                <Route path="/system-settings" element={<SystemSettings />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ProtectedRoute>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
