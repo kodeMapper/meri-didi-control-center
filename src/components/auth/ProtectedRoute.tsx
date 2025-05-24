@@ -9,8 +9,6 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, loading } = useAuth();
 
-  console.log('ProtectedRoute: loading =', loading, 'isAuthenticated =', isAuthenticated);
-
   if (loading) {
     // Loading spinner while checking authentication
     return (
@@ -24,10 +22,8 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    console.log('ProtectedRoute: Showing login page');
     return <Login />;
   }
 
-  console.log('ProtectedRoute: User authenticated, showing app');
   return <>{children}</>;
 };

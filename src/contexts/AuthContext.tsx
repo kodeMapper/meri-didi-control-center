@@ -42,12 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check if user is already logged in (from localStorage)
     const token = localStorage.getItem('admin_token');
-    console.log('AuthContext: Checking token:', token);
     if (token === 'authenticated') {
-      console.log('AuthContext: User is authenticated');
       setIsAuthenticated(true);
-    } else {
-      console.log('AuthContext: User is not authenticated');
     }
     setLoading(false);
   }, []);
