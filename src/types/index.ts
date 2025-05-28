@@ -1,5 +1,3 @@
-
-
 export interface User {
   id: string;
   name: string;
@@ -84,6 +82,9 @@ export interface Booking {
   notes?: string;
   additionalNotes?: string;
   paymentMode?: PaymentMode;
+  paymentStatus?: PaymentStatus;
+  cashPaymentConfirmedAt?: string;
+  cashPaymentConfirmedBy?: string;
   feedback: string;
   rating: number;
   createdAt: string;
