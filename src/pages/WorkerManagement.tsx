@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Worker, ServiceType } from "@/types";
 import { WorkerService } from "@/services/mockDatabase";
+import { WorkerAPI } from "@/services/api-service";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -75,6 +76,7 @@ import {
   deleteWorkerApplication,
   addNotification
 } from "@/lib/supabase";
+import { APIDebugComponent } from "@/components/debug/APIDebugComponent";
 
 function WorkerManagement() {
   const [activeWorkers, setActiveWorkers] = useState<Worker[]>([]);
@@ -93,44 +95,94 @@ function WorkerManagement() {
   const [sortOrder, setSortOrder] = useState<string>("asc");
   const [bulkSelected, setBulkSelected] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [apiConnectionStatus, setApiConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Load workers from database
-    loadWorkers();
+    // Check API connection status first
+    const checkApiConnection = async () => {
+      setApiConnectionStatus('checking');
+      const isConnected = await WorkerAPI.testConnection();
+      setApiConnectionStatus(isConnected ? 'connected' : 'disconnected');
+      
+      // Load workers from database
+      loadWorkers();
+    };
+    
+    checkApiConnection();
   }, []);
   
   const loadWorkers = async () => {
     setIsLoading(true);
     try {
-      // Load active workers
-      const activeWorkersData = await getWorkersFromApplications('Active');
-      setActiveWorkers(activeWorkersData);
-      
-      // Load inactive workers
-      const inactiveWorkersData = await getWorkersFromApplications('Inactive');
-      setInactiveWorkers(inactiveWorkersData);
-      
-      // Load pending workers
-      const pendingWorkersData = await getWorkersFromApplications('Pending');
-      setPendingWorkers(pendingWorkersData);
-      
-      // Load rejected workers
-      const rejectedWorkersData = await getWorkersFromApplications('Rejected');
-      setRejectedWorkers(rejectedWorkersData);
+      // Check if API is connected
+      if (apiConnectionStatus === 'connected' || await WorkerAPI.testConnection()) {
+        // If connected or wasn't checked yet, try to load from API
+        setApiConnectionStatus('connected');
+        
+        // Load all workers from the new API
+        const allWorkers = await WorkerAPI.getAllWorkers();
+        
+        // Filter workers by status
+        setActiveWorkers(allWorkers.filter(worker => worker.status === 'Active'));
+        setInactiveWorkers(allWorkers.filter(worker => worker.status === 'Inactive'));
+        setPendingWorkers(allWorkers.filter(worker => worker.status === 'Pending'));
+        setRejectedWorkers(allWorkers.filter(worker => worker.status === 'Rejected'));
+        
+        return; // Successfully loaded from API, no need for fallbacks
+      } else {
+        // API is not connected, mark as disconnected and continue to fallbacks
+        setApiConnectionStatus('disconnected');
+        throw new Error('API is not connected');
+      }
     } catch (error) {
-      console.error("Error loading workers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load workers data",
-        variant: "destructive",
-      });
+      console.error("Error loading workers from API:", error);
+      setApiConnectionStatus('disconnected');
       
-      // Fallback to mock database
-      setActiveWorkers(WorkerService.getActive());
-      setPendingWorkers(WorkerService.getPending());
+      // Only show toast for unexpected errors, not for known API disconnection
+      if (error.message !== 'API is not connected') {
+        toast({
+          title: "API Error",
+          description: "Failed to load workers data from API, using fallback sources.",
+          variant: "destructive",
+        });
+      }
+      
+      try {
+        // Try Supabase as first fallback
+        const activeWorkersData = await getWorkersFromApplications('Active');
+        setActiveWorkers(activeWorkersData);
+        
+        const inactiveWorkersData = await getWorkersFromApplications('Inactive');
+        setInactiveWorkers(inactiveWorkersData);
+        
+        const pendingWorkersData = await getWorkersFromApplications('Pending');
+        setPendingWorkers(pendingWorkersData);
+        
+        const rejectedWorkersData = await getWorkersFromApplications('Rejected');
+        setRejectedWorkers(rejectedWorkersData);
+        
+        toast({
+          title: "Using Supabase",
+          description: "Loading workers from Supabase as API is unavailable.",
+        });
+      } catch (supabaseError) {
+        console.error("Error loading from Supabase fallback:", supabaseError);
+        
+        // Fallback to mock database as last resort
+        setActiveWorkers(WorkerService.getActive());
+        setInactiveWorkers(WorkerService.getInactive());
+        setPendingWorkers(WorkerService.getPending());
+        setRejectedWorkers(WorkerService.getRejected());
+        
+        toast({
+          title: "Using Mock Database",
+          description: "Loading workers from mock database as API and Supabase are unavailable.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -198,11 +250,19 @@ function WorkerManagement() {
   // Helper function to refresh data
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    
+    // Check API connection first
+    const isConnected = await WorkerAPI.testConnection();
+    setApiConnectionStatus(isConnected ? 'connected' : 'disconnected');
+    
     await loadWorkers();
     setIsRefreshing(false);
     toast({
       title: "Data Refreshed",
-      description: "Worker data has been updated successfully.",
+      description: isConnected ? 
+        "Worker data has been updated from the API." : 
+        "Worker data has been updated from fallback sources.",
+      variant: "default"
     });
   };
 
@@ -254,6 +314,7 @@ function WorkerManagement() {
 
   // Bulk operations
   const handleBulkActivate = async () => {
+    setActionInProgress('activating');
     try {
       for (const workerId of bulkSelected) {
         await updateWorkerApplicationStatus(workerId, 'Active');
@@ -271,10 +332,13 @@ function WorkerManagement() {
         description: "Failed to activate some workers",
         variant: "destructive",
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   const handleBulkDeactivate = async () => {
+    setActionInProgress('deactivating');
     try {
       for (const workerId of bulkSelected) {
         await updateWorkerApplicationStatus(workerId, 'Inactive');
@@ -292,6 +356,8 @@ function WorkerManagement() {
         description: "Failed to deactivate some workers",
         variant: "destructive",
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
@@ -328,25 +394,36 @@ function WorkerManagement() {
   };
 
   const handleActivateWorker = async (id: string) => {
+    setActionInProgress('activating');
     try {
-      // Update in Supabase
-      const success = await updateWorkerApplicationStatus(id, 'Active');
+      // Update via the new API
+      const success = await WorkerAPI.approveWorker(id);
       if (!success) {
-        throw new Error("Failed to update worker status");
+        throw new Error("Failed to activate worker");
       }
 
-      // Also update in mock database for compatibility
-      WorkerService.update(id, { status: "Active" });
+      // Try to update in Supabase as fallback/compatibility
+      try {
+        await updateWorkerApplicationStatus(id, 'Active');
+        // Also update in mock database for compatibility
+        WorkerService.update(id, { status: "Active" });
+      } catch (fallbackError) {
+        console.log("Fallback update not critical, continuing:", fallbackError);
+      }
       
-      // Send notification to worker
-      await addNotification({
-        type: "Worker Verified",
-        message: "Your profile has been activated. You can now receive bookings.",
-        title: "Profile Activated",
-        read: false,
-        user_type: "Worker",
-        user_identifier: id
-      });
+      // Try to send notification
+      try {
+        await addNotification({
+          type: "Worker Verified",
+          message: "Your profile has been activated. You can now receive bookings.",
+          title: "Profile Activated",
+          read: false,
+          user_type: "Worker",
+          user_identifier: id
+        });
+      } catch (notificationError) {
+        console.log("Notification sending failed, continuing:", notificationError);
+      }
       
       toast({
         title: "Worker Activated",
@@ -362,29 +439,42 @@ function WorkerManagement() {
         description: "Failed to activate worker",
         variant: "destructive",
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   const handleDeactivateWorker = async (id: string) => {
+    setActionInProgress('deactivating');
     try {
-      // Update in Supabase
-      const success = await updateWorkerApplicationStatus(id, 'Inactive');
+      // Update via the new API
+      const success = await WorkerAPI.deactivateWorker(id);
       if (!success) {
-        throw new Error("Failed to update worker status");
+        throw new Error("Failed to deactivate worker");
       }
 
-      // Also update in mock database for compatibility
-      WorkerService.update(id, { status: "Inactive" });
+      // Try to update in Supabase as fallback/compatibility
+      try {
+        await updateWorkerApplicationStatus(id, 'Inactive');
+        // Also update in mock database for compatibility
+        WorkerService.update(id, { status: "Inactive" });
+      } catch (fallbackError) {
+        console.log("Fallback update not critical, continuing:", fallbackError);
+      }
       
-      // Send notification to worker
-      await addNotification({
-        type: "Worker Verified",
-        message: "Your profile has been deactivated. You will not receive new bookings until your profile is activated again.",
-        title: "Profile Deactivated",
-        read: false,
-        user_type: "Worker",
-        user_identifier: id
-      });
+      // Try to send notification
+      try {
+        await addNotification({
+          type: "Worker Verified",
+          message: "Your profile has been deactivated. You will not receive new bookings until your profile is activated again.",
+          title: "Profile Deactivated",
+          read: false,
+          user_type: "Worker",
+          user_identifier: id
+        });
+      } catch (notificationError) {
+        console.log("Notification sending failed, continuing:", notificationError);
+      }
       
       toast({
         title: "Worker Deactivated",
@@ -400,29 +490,42 @@ function WorkerManagement() {
         description: "Failed to deactivate worker",
         variant: "destructive",
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   const handleApproveWorker = async (workerId: string) => {
+    setActionInProgress('approving');
     try {
-      // Update in Supabase
-      const success = await updateWorkerApplicationStatus(workerId, 'Active');
+      // Update via the new API
+      const success = await WorkerAPI.approveWorker(workerId);
       if (!success) {
-        throw new Error("Failed to update worker status");
+        throw new Error("Failed to approve worker");
       }
 
-      // Also update in mock database for compatibility
-      WorkerService.update(workerId, { status: "Active" });
+      // Try to update in Supabase as fallback/compatibility
+      try {
+        await updateWorkerApplicationStatus(workerId, 'Active');
+        // Also update in mock database for compatibility
+        WorkerService.update(workerId, { status: "Active" });
+      } catch (fallbackError) {
+        console.log("Fallback update not critical, continuing:", fallbackError);
+      }
       
-      // Send notification
-      await addNotification({
-        type: "Worker Verified",
-        message: "Congratulations! Your application has been approved. You are now part of our team.",
-        title: "Application Approved",
-        read: false,
-        user_type: "Worker",
-        user_identifier: workerId
-      });
+      // Try to send notification
+      try {
+        await addNotification({
+          type: "Worker Verified",
+          message: "Congratulations! Your application has been approved. You are now part of our team.",
+          title: "Application Approved",
+          read: false,
+          user_type: "Worker",
+          user_identifier: workerId
+        });
+      } catch (notificationError) {
+        console.log("Notification sending failed, continuing:", notificationError);
+      }
       
       toast({
         title: "Worker Approved",
@@ -438,29 +541,42 @@ function WorkerManagement() {
         description: "Failed to approve worker",
         variant: "destructive",
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   const handleRejectWorker = async (workerId: string) => {
+    setActionInProgress('rejecting');
     try {
-      // Update in Supabase
-      const success = await updateWorkerApplicationStatus(workerId, 'Rejected');
+      // Update via the new API
+      const success = await WorkerAPI.rejectWorker(workerId);
       if (!success) {
-        throw new Error("Failed to update worker status");
+        throw new Error("Failed to reject worker");
       }
 
-      // Also update in mock database for compatibility
-      WorkerService.update(workerId, { status: "Rejected" });
+      // Try to update in Supabase as fallback/compatibility
+      try {
+        await updateWorkerApplicationStatus(workerId, 'Rejected');
+        // Also update in mock database for compatibility
+        WorkerService.update(workerId, { status: "Rejected" });
+      } catch (fallbackError) {
+        console.log("Fallback update not critical, continuing:", fallbackError);
+      }
       
-      // Send notification
-      await addNotification({
-        type: "Worker Verified",
-        message: "We regret to inform you that your application has been rejected. Thank you for your interest.",
-        title: "Application Rejected",
-        read: false,
-        user_type: "Worker",
-        user_identifier: workerId
-      });
+      // Try to send notification
+      try {
+        await addNotification({
+          type: "Worker Verified",
+          message: "We regret to inform you that your application has been rejected. Thank you for your interest.",
+          title: "Application Rejected",
+          read: false,
+          user_type: "Worker",
+          user_identifier: workerId
+        });
+      } catch (notificationError) {
+        console.log("Notification sending failed, continuing:", notificationError);
+      }
       
       toast({
         title: "Worker Rejected",
@@ -477,6 +593,8 @@ function WorkerManagement() {
         description: "Failed to reject worker",
         variant: "destructive",
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
@@ -484,14 +602,20 @@ function WorkerManagement() {
     if (!selectedWorkerId) return;
     
     try {
-      // Delete from Supabase
-      const success = await deleteWorkerApplication(selectedWorkerId);
+      // Delete via the new API
+      const success = await WorkerAPI.deleteWorker(selectedWorkerId);
       if (!success) {
         throw new Error("Failed to delete worker");
       }
 
-      // Also delete from mock database for compatibility
-      WorkerService.delete(selectedWorkerId);
+      // Try to delete from Supabase as fallback/compatibility
+      try {
+        await deleteWorkerApplication(selectedWorkerId);
+        // Also delete from mock database for compatibility
+        WorkerService.delete(selectedWorkerId);
+      } catch (fallbackError) {
+        console.log("Fallback delete not critical, continuing:", fallbackError);
+      }
       
       toast({
         title: "Worker Deleted",
@@ -512,6 +636,8 @@ function WorkerManagement() {
         description: "Failed to delete worker",
         variant: "destructive",
       });
+    } finally {
+      setActionInProgress(null);
     }
   };
 
@@ -627,7 +753,7 @@ function WorkerManagement() {
                 {worker.totalBookings || 0} bookings
               </span>
               <span className="flex items-center gap-1">
-                <Activity size={12} />
+                <Activity size={12} className="text-green-500" />
                 {worker.experience}y exp
               </span>
             </div>
@@ -856,6 +982,9 @@ function WorkerManagement() {
 
   return (
     <div className="space-y-6 p-6 bg-gradient-to-br from-yellow-50 via-white to-orange-50 min-h-screen">
+      {/* Debug Component - Remove in production */}
+      <APIDebugComponent />
+      
       {/* Enhanced Header Section with separated search & filters */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
         <div className="flex flex-col md:flex-row gap-4 justify-between">
@@ -935,16 +1064,30 @@ function WorkerManagement() {
               </Button>
             </div>
             
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="border-yellow-200 text-yellow-600 hover:bg-yellow-50"
-            >
-              <RefreshCw size={14} className={`mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant="outline" 
+                className={`
+                  ${apiConnectionStatus === 'connected' ? 'bg-green-50 text-green-600 border-green-200' : 
+                    apiConnectionStatus === 'disconnected' ? 'bg-red-50 text-red-600 border-red-200' : 
+                    'bg-yellow-50 text-yellow-600 border-yellow-200'}
+                `}
+              >
+                {apiConnectionStatus === 'connected' ? 'API Connected' : 
+                  apiConnectionStatus === 'disconnected' ? 'API Disconnected' : 
+                  'Checking API...'}
+              </Badge>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="border-yellow-200 text-yellow-600 hover:bg-yellow-50"
+              >
+                <RefreshCw size={14} className={`mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
             <Button 
               variant="outline"
               size="sm"

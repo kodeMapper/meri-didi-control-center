@@ -7,6 +7,7 @@ import { Check, Pencil, X, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkerService } from "@/services/mockDatabase";
 import { getWorkerApplications, mapWorkerApplicationToWorker, updateWorkerApplicationStatus, deleteWorkerApplication } from "@/lib/supabase";
+import { WorkerAPI } from "@/services/api-service";
 
 interface WorkerProfileProps {
   workerId: string | null;
@@ -18,6 +19,9 @@ interface WorkerProfileProps {
 export function WorkerProfile({ workerId, open, onClose, onStatusChange }: WorkerProfileProps) {
   const [worker, setWorker] = useState<Worker | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -26,23 +30,54 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
       
       setIsLoading(true);
       try {
-        // First try to get worker from Supabase
-        const workerApplications = await getWorkerApplications();
-        const workerApp = workerApplications.find(w => w.id === workerId);
+        // Try to get all workers via the API first
+        const allWorkers = await WorkerAPI.getAllWorkers();
+        const foundWorker = allWorkers.find(w => w.id === workerId);
         
-        if (workerApp) {
-          const mappedWorker = mapWorkerApplicationToWorker(workerApp);
-          setWorker(mappedWorker as Worker);
+        if (foundWorker) {
+          setWorker(foundWorker);
         } else {
+          // First fallback: try to get worker from Supabase
+          try {
+            const workerApplications = await getWorkerApplications();
+            const workerApp = workerApplications.find(w => w.id === workerId);
+            
+            if (workerApp) {
+              const mappedWorker = mapWorkerApplicationToWorker(workerApp);
+              setWorker(mappedWorker as Worker);
+            } else {
+              // Second fallback: mock database
+              const mockWorker = WorkerService.getById(workerId);
+              setWorker(mockWorker);
+            }
+          } catch (supabaseError) {
+            console.error("Error loading worker data from Supabase:", supabaseError);
+            // Fallback to mock database
+            const mockWorker = WorkerService.getById(workerId);
+            setWorker(mockWorker);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading worker data from API:", error);
+        // Try Supabase as fallback
+        try {
+          const workerApplications = await getWorkerApplications();
+          const workerApp = workerApplications.find(w => w.id === workerId);
+          
+          if (workerApp) {
+            const mappedWorker = mapWorkerApplicationToWorker(workerApp);
+            setWorker(mappedWorker as Worker);
+          } else {
+            // Fallback to mock database
+            const mockWorker = WorkerService.getById(workerId);
+            setWorker(mockWorker);
+          }
+        } catch (supabaseError) {
+          console.error("Error loading worker data from Supabase:", supabaseError);
           // Fallback to mock database
           const mockWorker = WorkerService.getById(workerId);
           setWorker(mockWorker);
         }
-      } catch (error) {
-        console.error("Error loading worker data:", error);
-        // Fallback to mock database
-        const mockWorker = WorkerService.getById(workerId);
-        setWorker(mockWorker);
       } finally {
         setIsLoading(false);
       }
@@ -54,11 +89,22 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
   const handleActivateWorker = async () => {
     if (!worker) return;
 
+    setIsActivating(true);
     try {
-      const success = await updateWorkerApplicationStatus(worker.id, 'Active');
-      
-      if (!success) {
-        throw new Error("Failed to update worker status");
+      // First try to update via the new API
+      try {
+        const success = await WorkerAPI.approveWorker(worker.id);
+        if (!success) {
+          throw new Error("Failed to update worker status via API");
+        }
+      } catch (apiError) {
+        console.error("Error activating worker via API, trying fallback:", apiError);
+        // Try to update via Supabase as fallback
+        const success = await updateWorkerApplicationStatus(worker.id, 'Active');
+        
+        if (!success) {
+          throw new Error("Failed to update worker status via Supabase");
+        }
       }
       
       // Also update in mock database for compatibility
@@ -80,27 +126,42 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
         description: "Failed to activate worker",
         variant: "destructive",
       });
+    } finally {
+      setIsActivating(false);
     }
   };
 
   const handleVerifyWorker = () => {
     if (!worker) return;
 
+    setIsVerifying(true);
     toast({
       title: "Worker Verified",
       description: "Worker documents have been verified.",
     });
     if (onStatusChange) onStatusChange();
+    setIsVerifying(false);
   };
 
   const handleDeleteWorker = async () => {
     if (!worker) return;
 
+    setIsDeleting(true);
     try {
-      const success = await deleteWorkerApplication(worker.id);
-      
-      if (!success) {
-        throw new Error("Failed to delete worker");
+      // First try to delete via the new API
+      try {
+        const success = await WorkerAPI.deleteWorker(worker.id);
+        if (!success) {
+          throw new Error("Failed to delete worker via API");
+        }
+      } catch (apiError) {
+        console.error("Error deleting worker via API, trying fallback:", apiError);
+        // Try to delete from Supabase as fallback
+        const success = await deleteWorkerApplication(worker.id);
+        
+        if (!success) {
+          throw new Error("Failed to delete worker via Supabase");
+        }
       }
       
       // Also delete from mock database for compatibility
@@ -121,6 +182,8 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
         description: "Failed to delete worker",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -195,6 +258,7 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
                   onClick={handleActivateWorker}
                   className="w-full bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 hover:text-green-700"
                   variant="outline"
+                  isLoading={isActivating}
                 >
                   <Check size={16} className="mr-2" />
                   Activate Worker
@@ -205,6 +269,7 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
                 onClick={handleVerifyWorker}
                 className="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:text-blue-700"  
                 variant="outline"
+                isLoading={isVerifying}
               >
                 <Check size={16} className="mr-2" />
                 Verify Worker
@@ -214,6 +279,7 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
                 onClick={handleDeleteWorker}
                 className="w-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 hover:text-red-700"
                 variant="outline"
+                isLoading={isDeleting}
               >
                 <Trash size={16} className="mr-2" />
                 Delete Profile

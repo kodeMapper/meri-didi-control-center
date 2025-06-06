@@ -121,6 +121,10 @@ class WorkerServiceClass {
     return this.workers.filter(worker => worker.status === "Active");
   }
   
+  getInactive() {
+    return this.workers.filter(worker => worker.status === "Inactive");
+  }
+  
   getPending() {
     return this.workers.filter(worker => worker.status === "Pending");
   }
