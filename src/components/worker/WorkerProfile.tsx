@@ -429,38 +429,33 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
 
     setIsDeleting(true);
     try {
-      // First try to delete via the new API
-      try {
-        const success = await WorkerAPI.deleteWorker(worker.id);
-        if (!success) {
-          throw new Error("Failed to delete worker via API");
-        }
-      } catch (apiError) {
-        console.error("Error deleting worker via API, trying fallback:", apiError);
-        // Try to delete from Supabase as fallback
-        const success = await deleteWorkerApplication(worker.id);
+      console.log(`Attempting to delete worker: ${worker.fullName} (ID: ${worker.id})`);
+      
+      // Delete via the API using the correct /delete-worker/{id} endpoint
+      const success = await WorkerAPI.deleteWorker(worker.id);
+      
+      if (success) {
+        console.log("Worker deleted successfully from backend");
         
-        if (!success) {
-          throw new Error("Failed to delete worker via Supabase");
-        }
+        // Also delete from mock database for compatibility
+        WorkerService.delete(worker.id);
+        
+        toast({
+          title: "Worker Deleted",
+          description: `${worker.fullName} has been deleted successfully.`,
+          variant: "destructive",
+        });
+        
+        onClose();
+        if (onStatusChange) onStatusChange();
+      } else {
+        throw new Error("Delete operation returned false");
       }
-      
-      // Also delete from mock database for compatibility
-      WorkerService.delete(worker.id);
-      
-      toast({
-        title: "Worker Deleted",
-        description: "Worker has been deleted successfully.",
-        variant: "destructive",
-      });
-      
-      onClose();
-      if (onStatusChange) onStatusChange();
     } catch (error) {
       console.error("Error deleting worker:", error);
       toast({
         title: "Error",
-        description: "Failed to delete worker",
+        description: `Failed to delete ${worker.fullName}. Please try again.`,
         variant: "destructive",
       });
     } finally {

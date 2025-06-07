@@ -560,18 +560,24 @@ export const WorkerAPI = {
       
       console.log(`Deleting worker: Frontend ID ${workerId} → Backend ID ${backendId}`);
       
-      // Try the main API endpoint first
-      try {
-        const response = await axios.delete(`${API_BASE_URL}/worker/${backendId}`);
+      // Use the correct delete-worker endpoint
+      const response = await axios.delete(`${API_BASE_URL}/delete-worker/${backendId}`);
+      
+      if (response.status === 200) {
         console.log('Worker deletion successful');
-        return response.status === 200;
-      } catch (mainEndpointError) {
-        console.warn(`Main endpoint delete failed: ${mainEndpointError.message}. Trying alternative endpoint...`);
         
-        // Some API endpoints might use a different format
-        const altResponse = await axios.delete(`${API_BASE_URL}/delete/${backendId}`);
-        console.log('Worker deletion successful with alternative endpoint');
-        return altResponse.status === 200;
+        // Clean up local mappings for the deleted worker
+        workerIdMap.forEach((frontendId, phone) => {
+          if (frontendId === workerId) {
+            workerIdMap.delete(phone);
+          }
+        });
+        backendIdMap.delete(workerId);
+        
+        return true;
+      } else {
+        console.warn(`Delete request returned status: ${response.status}`);
+        return false;
       }
     } catch (error) {
       console.error(`Error deleting worker ${workerId}:`, error);
