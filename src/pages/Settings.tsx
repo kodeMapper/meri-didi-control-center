@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,8 +20,13 @@ import {
   Palette,
   DollarSign,
   Lock,
-  Loader2
+  Loader2,
+  Bug
 } from "lucide-react";
+
+// Import the debugging tools
+import { WorkerIdMappingDebugTool } from "@/components/debug/WorkerIdMappingDebugTool";
+import { WorkerIdVerifier } from "@/components/debug/WorkerIdVerifier";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -151,7 +155,7 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
           <TabsTrigger value="profile">
             <User className="h-4 w-4 mr-2" />
             Profile
@@ -171,6 +175,10 @@ export default function Settings() {
           <TabsTrigger value="app">
             <Globe className="h-4 w-4 mr-2" />
             App Settings
+          </TabsTrigger>
+          <TabsTrigger value="debug">
+            <Bug className="h-4 w-4 mr-2" />
+            Debug
           </TabsTrigger>
         </TabsList>
         
@@ -794,6 +802,36 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Debug Tab Content */}
+      <TabsContent value="debug">
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Worker ID Verification</CardTitle>
+            <CardDescription>
+              Test and troubleshoot worker ID mappings and status changes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WorkerIdVerifier />
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Worker ID Mapping Debug</CardTitle>
+            <CardDescription>
+              View and manage internal ID mappings between frontend and backend
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-sm text-gray-500">
+              This tool helps diagnose issues with worker ID mappings. Click the button below to open the debug panel.
+            </p>
+            <WorkerIdMappingDebugTool />
+          </CardContent>
+        </Card>
+      </TabsContent>
     </div>
   );
 }

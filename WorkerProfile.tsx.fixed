@@ -45,7 +45,9 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
     religion: ''
   });
   
-  const { toast } = useToast();  useEffect(() => {
+  const { toast } = useToast();
+
+  useEffect(() => {
     const loadWorkerData = async () => {
       if (!workerId || !open) return;
       
@@ -80,84 +82,93 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
             status: foundWorker.status || 'Pending',
             religion: foundWorker.religion || 'Hindu'
           });
-          return;
+        } else {
+          console.log(`No worker found with exact ID match: ${workerId}`);
+          
+          // Try to find by partial ID (for backward compatibility)
+          const partialMatch = allWorkers.find(w => 
+            w.id.includes(workerId) || 
+            workerId.includes(w.id) || 
+            (workerId.includes(w.phone?.replace(/[^0-9]/g, '') || ''))
+          );
+          
+          if (partialMatch) {
+            console.log(`Found partial match: ${partialMatch.fullName} (ID: ${partialMatch.id})`);
+            setWorker(partialMatch);
+            setEditableData({
+              phone: partialMatch.phone || '',
+              email: partialMatch.email || '',
+              address: partialMatch.address || '',
+              service: partialMatch.serviceType || 'Cleaning',
+              availability: partialMatch.availability || '',
+              status: partialMatch.status || 'Pending',
+              religion: partialMatch.religion || 'Hindu'
+            });
+          } else {
+          // First fallback: try to get worker from Supabase
+          try {
+            const workerApplications = await getWorkerApplications();
+            const workerApp = workerApplications.find(w => w.id === workerId);
+            
+            if (workerApp) {
+              const mappedWorker = mapWorkerApplicationToWorker(workerApp);
+              setWorker(mappedWorker as Worker);
+              // Initialize editable data
+              setEditableData({
+                phone: mappedWorker.phone || '',
+                email: mappedWorker.email || '',
+                address: mappedWorker.address || '',
+                service: mappedWorker.serviceType || 'Cleaning',
+                availability: mappedWorker.availability || '',
+                status: mappedWorker.status || 'Pending',
+                religion: mappedWorker.religion || 'Hindu'
+              });
+            } else {
+              // Second fallback: mock database
+              const mockWorker = WorkerService.getById(workerId);
+              if (mockWorker) {
+                setWorker(mockWorker);
+                setEditableData({
+                  phone: mockWorker.phone || '',
+                  email: mockWorker.email || '',
+                  address: mockWorker.address || '',
+                  service: mockWorker.serviceType || 'Cleaning',
+                  availability: mockWorker.availability || '',
+                  status: mockWorker.status || 'Pending',
+                  religion: mockWorker.religion || 'Hindu'
+                });
+              }
+            }
+          } catch (supabaseError) {
+            console.error("Error loading worker data from Supabase:", supabaseError);
+            // Fallback to mock database
+            const mockWorker = WorkerService.getById(workerId);
+            setWorker(mockWorker);
+          }
         }
-        
-        console.log(`No worker found with exact ID match: ${workerId}`);
-        
-        // Try to find by partial ID (for backward compatibility)
-        const partialMatch = allWorkers.find(w => 
-          w.id.includes(workerId) || 
-          workerId.includes(w.id) || 
-          (workerId.includes(w.phone?.replace(/[^0-9]/g, '') || ''))
-        );
-        
-        if (partialMatch) {
-          console.log(`Found partial match: ${partialMatch.fullName} (ID: ${partialMatch.id})`);
-          setWorker(partialMatch);
-          setEditableData({
-            phone: partialMatch.phone || '',
-            email: partialMatch.email || '',
-            address: partialMatch.address || '',
-            service: partialMatch.serviceType || 'Cleaning',
-            availability: partialMatch.availability || '',
-            status: partialMatch.status || 'Pending',
-            religion: partialMatch.religion || 'Hindu'
-          });
-          return;
-        }
-        
-        // First fallback: try to get worker from Supabase
-        await trySupabaseFallback();
       } catch (error) {
         console.error("Error loading worker data from API:", error);
         // Try Supabase as fallback
-        await trySupabaseFallback();
+        try {
+          const workerApplications = await getWorkerApplications();
+          const workerApp = workerApplications.find(w => w.id === workerId);
+          
+          if (workerApp) {
+            const mappedWorker = mapWorkerApplicationToWorker(workerApp);
+            setWorker(mappedWorker as Worker);
+          } else {
+            // Fallback to mock database
+            const mockWorker = WorkerService.getById(workerId);
+            setWorker(mockWorker);
+          }
+        } catch (supabaseError) {
+          console.error("Error loading worker data from Supabase:", supabaseError);
+          // Fallback to mock database
+          const mockWorker = WorkerService.getById(workerId);
+          setWorker(mockWorker);
+        }
       } finally {
         setIsLoading(false);
-      }
-    };
-    
-    // Helper function for Supabase fallback logic
-    const trySupabaseFallback = async () => {
-      try {
-        const workerApplications = await getWorkerApplications();
-        const workerApp = workerApplications.find(w => w.id === workerId);
-        
-        if (workerApp) {
-          const mappedWorker = mapWorkerApplicationToWorker(workerApp);
-          setWorker(mappedWorker as Worker);
-          // Initialize editable data
-          setEditableData({
-            phone: mappedWorker.phone || '',
-            email: mappedWorker.email || '',
-            address: mappedWorker.address || '',
-            service: mappedWorker.serviceType || 'Cleaning',
-            availability: mappedWorker.availability || '',
-            status: mappedWorker.status || 'Pending',
-            religion: mappedWorker.religion || 'Hindu'
-          });
-        } else {
-          // Second fallback: mock database
-          const mockWorker = WorkerService.getById(workerId);
-          if (mockWorker) {
-            setWorker(mockWorker);
-            setEditableData({
-              phone: mockWorker.phone || '',
-              email: mockWorker.email || '',
-              address: mockWorker.address || '',
-              service: mockWorker.serviceType || 'Cleaning',
-              availability: mockWorker.availability || '',
-              status: mockWorker.status || 'Pending',
-              religion: mockWorker.religion || 'Hindu'
-            });
-          }
-        }
-      } catch (supabaseError) {
-        console.error("Error loading worker data from Supabase:", supabaseError);
-        // Fallback to mock database
-        const mockWorker = WorkerService.getById(workerId);
-        setWorker(mockWorker);
       }
     };
     
@@ -309,7 +320,7 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
         toast({
           title: "Status Updated",
           description: `Worker status changed to ${newStatus}`,
-          variant: "default"
+          variant: "success"
         });
         
         // Update the local worker object
@@ -353,7 +364,7 @@ export function WorkerProfile({ workerId, open, onClose, onStatusChange }: Worke
           toast({
             title: "Status Updated",
             description: `Worker status changed to ${newStatus} (after retry)`,
-            variant: "default"
+            variant: "success"
           });
           
           // Update the local worker

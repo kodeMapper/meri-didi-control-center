@@ -316,9 +316,23 @@ function WorkerManagement() {
   const handleBulkActivate = async () => {
     setActionInProgress('activating');
     try {
+      // Get all workers data to find religion information
+      const allWorkers = [...activeWorkers, ...inactiveWorkers, ...pendingWorkers, ...rejectedWorkers];
+      
       for (const workerId of bulkSelected) {
-        await updateWorkerApplicationStatus(workerId, 'Active');
-        WorkerService.update(workerId, { status: "Active" });
+        // Find worker to get religion info
+        const worker = allWorkers.find(w => w.id === workerId);
+        const religion = worker?.religion || 'Hindu';
+        
+        // First try to update via API
+        try {
+          await WorkerAPI.approveWorker(workerId, religion);
+        } catch (apiError) {
+          console.log("API update failed, using fallback:", apiError);
+          // Fallback to direct database updates
+          await updateWorkerApplicationStatus(workerId, 'Active');
+          WorkerService.update(workerId, { status: "Active" });
+        }
       }
       setBulkSelected([]);
       await loadWorkers();
@@ -340,9 +354,23 @@ function WorkerManagement() {
   const handleBulkDeactivate = async () => {
     setActionInProgress('deactivating');
     try {
+      // Get all workers data to find religion information
+      const allWorkers = [...activeWorkers, ...inactiveWorkers, ...pendingWorkers, ...rejectedWorkers];
+      
       for (const workerId of bulkSelected) {
-        await updateWorkerApplicationStatus(workerId, 'Inactive');
-        WorkerService.update(workerId, { status: "Inactive" });
+        // Find worker to get religion info
+        const worker = allWorkers.find(w => w.id === workerId);
+        const religion = worker?.religion || 'Hindu';
+        
+        // First try to update via API
+        try {
+          await WorkerAPI.deactivateWorker(workerId, religion);
+        } catch (apiError) {
+          console.log("API update failed, using fallback:", apiError);
+          // Fallback to direct database updates
+          await updateWorkerApplicationStatus(workerId, 'Inactive');
+          WorkerService.update(workerId, { status: "Inactive" });
+        }
       }
       setBulkSelected([]);
       await loadWorkers();
@@ -396,8 +424,13 @@ function WorkerManagement() {
   const handleActivateWorker = async (id: string) => {
     setActionInProgress('activating');
     try {
+      // Find the worker to get their religion
+      const allWorkers = [...activeWorkers, ...inactiveWorkers, ...pendingWorkers, ...rejectedWorkers];
+      const worker = allWorkers.find(w => w.id === id);
+      const religion = worker?.religion || 'Hindu';
+
       // Update via the new API
-      const success = await WorkerAPI.approveWorker(id);
+      const success = await WorkerAPI.approveWorker(id, religion);
       if (!success) {
         throw new Error("Failed to activate worker");
       }
@@ -447,8 +480,13 @@ function WorkerManagement() {
   const handleDeactivateWorker = async (id: string) => {
     setActionInProgress('deactivating');
     try {
+      // Find the worker to get their religion
+      const allWorkers = [...activeWorkers, ...inactiveWorkers, ...pendingWorkers, ...rejectedWorkers];
+      const worker = allWorkers.find(w => w.id === id);
+      const religion = worker?.religion || 'Hindu';
+
       // Update via the new API
-      const success = await WorkerAPI.deactivateWorker(id);
+      const success = await WorkerAPI.deactivateWorker(id, religion);
       if (!success) {
         throw new Error("Failed to deactivate worker");
       }
@@ -498,8 +536,13 @@ function WorkerManagement() {
   const handleApproveWorker = async (workerId: string) => {
     setActionInProgress('approving');
     try {
+      // Find the worker to get their religion
+      const allWorkers = [...activeWorkers, ...inactiveWorkers, ...pendingWorkers, ...rejectedWorkers];
+      const worker = allWorkers.find(w => w.id === workerId);
+      const religion = worker?.religion || 'Hindu';
+
       // Update via the new API
-      const success = await WorkerAPI.approveWorker(workerId);
+      const success = await WorkerAPI.approveWorker(workerId, religion);
       if (!success) {
         throw new Error("Failed to approve worker");
       }
@@ -549,8 +592,13 @@ function WorkerManagement() {
   const handleRejectWorker = async (workerId: string) => {
     setActionInProgress('rejecting');
     try {
+      // Find the worker to get their religion
+      const allWorkers = [...activeWorkers, ...inactiveWorkers, ...pendingWorkers, ...rejectedWorkers];
+      const worker = allWorkers.find(w => w.id === workerId);
+      const religion = worker?.religion || 'Hindu';
+
       // Update via the new API
-      const success = await WorkerAPI.rejectWorker(workerId);
+      const success = await WorkerAPI.rejectWorker(workerId, religion);
       if (!success) {
         throw new Error("Failed to reject worker");
       }
@@ -1435,7 +1483,7 @@ function WorkerManagement() {
         </TabsContent>
         
         <TabsContent value="pending" className="mt-2">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium">Pending Worker Applications</h2>
             </div>

@@ -59,6 +59,7 @@ export interface Worker {
   updatedAt: string;
   idProofUrl: string | null;
   photoUrl: string | null;
+  religion?: string; // Added religion field
 }
 
 export interface Booking {
