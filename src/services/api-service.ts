@@ -213,6 +213,40 @@ async function findAndCacheBackendId(frontendId: string): Promise<string> {
   }
 }
 
+// Function to normalize worker status to valid frontend values
+function normalizeWorkerStatus(backendStatus: string): 'Active' | 'Inactive' | 'Pending' | 'Rejected' {
+  if (!backendStatus) return 'Pending';
+  
+  const status = backendStatus.toLowerCase();
+  
+  // Map common variations to standard statuses
+  // Check for inactive first (before checking for active)
+  if (status.includes('inactive') || status.includes('deactive')) {
+    return 'Inactive';
+  }
+  
+  if (status.includes('active') || status.includes('approved') || status.includes('super')) {
+    return 'Active';
+  }
+  
+  if (status.includes('reject')) {
+    return 'Rejected';
+  }
+  
+  if (status.includes('pending') || status.includes('review')) {
+    return 'Pending';
+  }
+  
+  // Handle edge cases like "string" or other invalid values
+  if (status === 'string' || status.length < 3) {
+    return 'Pending'; // Default to Pending for invalid statuses
+  }
+  
+  // Default to Pending for any unrecognized status
+  console.warn(`Unknown worker status "${backendStatus}" mapped to "Pending"`);
+  return 'Pending';
+}
+
 // Function to map backend worker data to our Worker type
 export function mapBackendWorkerToWorker(workerData: any, index?: number): Worker {
   // Get the consistent frontend ID for this worker
@@ -234,7 +268,7 @@ export function mapBackendWorkerToWorker(workerData: any, index?: number): Worke
     idNumber: workerData.id_number || "",
     about: workerData.about || "",
     skills: workerData.skills?.split(',').map((s: string) => s.trim()) || [],
-    status: workerData.status || "Pending",
+    status: normalizeWorkerStatus(workerData.status), // Use normalized status
     rating: workerData.rating || 0,
     totalBookings: workerData.total_bookings || 0,
     completionRate: workerData.completion_rate || 0,
