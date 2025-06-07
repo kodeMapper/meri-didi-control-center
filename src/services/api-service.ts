@@ -86,9 +86,13 @@ export const WorkerAPI = {
   },
 
   // Update worker status using the new endpoint
-  updateWorkerStatus: async (workerId: string, status: 'Active' | 'Inactive' | 'Pending' | 'Rejected'): Promise<boolean> => {
+  updateWorkerStatus: async (workerId: string, status: 'Active' | 'Inactive' | 'Pending' | 'Rejected', religion: string = 'Hindu'): Promise<boolean> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/update/${workerId}?new_status=${status}`);
+      // The API now requires a JSON body instead of query parameters
+      const response = await axios.put(`${API_BASE_URL}/update/${workerId}`, {
+        status: status,
+        religion: religion
+      });
       return response.status === 200;
     } catch (error) {
       console.error(`Error updating worker ${workerId} status to ${status}:`, error);
@@ -97,23 +101,23 @@ export const WorkerAPI = {
   },
 
   // Approve a worker (change status to Active)
-  approveWorker: async (workerId: string): Promise<boolean> => {
-    return await WorkerAPI.updateWorkerStatus(workerId, 'Active');
+  approveWorker: async (workerId: string, religion: string = 'Hindu'): Promise<boolean> => {
+    return await WorkerAPI.updateWorkerStatus(workerId, 'Active', religion);
   },
 
   // Reject a worker (change status to Rejected)
-  rejectWorker: async (workerId: string): Promise<boolean> => {
-    return await WorkerAPI.updateWorkerStatus(workerId, 'Rejected');
+  rejectWorker: async (workerId: string, religion: string = 'Hindu'): Promise<boolean> => {
+    return await WorkerAPI.updateWorkerStatus(workerId, 'Rejected', religion);
   },
 
   // Deactivate a worker (change status to Inactive)
-  deactivateWorker: async (workerId: string): Promise<boolean> => {
-    return await WorkerAPI.updateWorkerStatus(workerId, 'Inactive');
+  deactivateWorker: async (workerId: string, religion: string = 'Hindu'): Promise<boolean> => {
+    return await WorkerAPI.updateWorkerStatus(workerId, 'Inactive', religion);
   },
 
   // Activate a worker (change status to Active)
-  activateWorker: async (workerId: string): Promise<boolean> => {
-    return await WorkerAPI.updateWorkerStatus(workerId, 'Active');
+  activateWorker: async (workerId: string, religion: string = 'Hindu'): Promise<boolean> => {
+    return await WorkerAPI.updateWorkerStatus(workerId, 'Active', religion);
   },
 
   // Delete a worker
